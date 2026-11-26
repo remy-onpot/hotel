@@ -1,0 +1,15 @@
+.select { min-width: 0; color: #29251f; font: inherit; }
+.select :global(.hotel-select__control) { min-height: 44px; padding: 0 .65rem; border: 1px solid #cfc6ba; border-radius: 6px; background: #fff; box-shadow: none; cursor: pointer; }
+.select :global(.hotel-select__control:hover) { border-color: #9b7848; }
+.select :global(.hotel-select__control--is-focused) { border-color: #9b7848; box-shadow: 0 0 0 3px rgb(155 120 72 / 16%); }
+.select :global(.hotel-select__value-container) { padding: 0; gap: .35rem; }
+.select :global(.hotel-select__placeholder) { color: #77716a; }
+.select :global(.hotel-select__input-container) { margin: 0; padding: 0; }
+.select :global(.hotel-select__indicator) { padding: 5px; color: #756b60; }
+.select :global(.hotel-select__indicator-separator) { display: none; }
+.select :global(.hotel-select__menu) { z-index: 20; margin-top: 5px; overflow: hidden; border: 1px solid #e2d9cd; border-radius: 7px; background: #fff; box-shadow: 0 8px 22px rgb(35 27 18 / 14%); }
+.select :global(.hotel-select__menu-list) { max-height: 240px; padding: 4px; }
+.select :global(.hotel-select__option) { padding: .65rem .75rem; border-radius: 4px; cursor: pointer; }
+.select :global(.hotel-select__option--is-focused) { background: #f4efe7; }
+.select :global(.hotel-select__option--is-selected) { background: #805a30; color: #fff; }
+.select :global(.hotel-select__option--is-selected.hotel-select__option--is-focused) { background: #6c4927; }

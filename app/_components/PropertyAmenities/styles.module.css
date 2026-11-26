@@ -1,0 +1,24 @@
+.section { padding: 92px 0 100px; background: #f7f5ef; color: #293a33; }
+.inner { width: min(1200px, calc(100% - 40px)); margin: 0 auto; }
+.header { max-width: 680px; margin: 0 auto 38px; text-align: center; }
+.eyebrow { margin: 0 0 12px; color: #a27c4a; font-size: .72rem; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }
+.header h2 { margin: 0; color: #183b34; font: 500 clamp(2.2rem, 4vw, 3.5rem)/1.08 Georgia, serif; }
+.header > p:last-child { margin: 15px 0 0; color: #69766f; font-size: .98rem; line-height: 1.6; }
+.popular { margin: 0 0 25px; padding: 22px 24px; border: 1px solid #e6dfd2; background: #fffdf9; }
+.popular h3 { margin: 0 0 14px; color: #24463a; font: 500 1.25rem Georgia, serif; }
+.popular ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.popular li { display: inline-flex; padding: 8px 12px; border: 1px solid #e9e4d8; border-radius: 30px; background: #fbfaf6; color: #55645b; font-size: .78rem; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.card { padding: 21px; border: 1px solid #e7e2d8; border-radius: 9px; background: #fff; }
+.cardHeading { display: flex; align-items: center; gap: 11px; margin-bottom: 13px; }
+.cardHeading > span { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #f3eee4; color: #987448; }
+.cardHeading h3 { margin: 0; color: #234238; font: 500 1.2rem Georgia, serif; }
+.card ul { display: grid; gap: 8px; margin: 0; padding: 0 0 0 15px; list-style: none; }
+.card li { position: relative; color: #68746c; font-size: .83rem; line-height: 1.48; }
+.card li::before { position: absolute; top: .62em; left: -13px; width: 4px; height: 4px; border-radius: 50%; background: #bb9b6c; content: ""; }
+.extraNotes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.extraNotes article { padding: 19px 22px; border-left: 3px solid #b38b54; background: #eeebe3; }
+.extraNotes p { margin: 0; color: #647068; font-size: .86rem; line-height: 1.5; }
+.extraNotes .noteLabel { margin-bottom: 5px; color: #234238; font: 500 1.08rem Georgia, serif; }
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .section { padding: 70px 0; } }
+@media (max-width: 560px) { .inner { width: min(100% - 28px, 460px); } .grid, .extraNotes { grid-template-columns: 1fr; } .card { padding: 18px; } .popular { padding: 18px; } .section { padding: 58px 0; } }

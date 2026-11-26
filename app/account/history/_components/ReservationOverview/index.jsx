@@ -10,17 +10,17 @@ import DeleteForm from "../DeleteFrom";
 import Link from "next/link";
 import { useState } from "react";
 import CancelButton from "../CancelButton";
+import { formatMoney } from "@/app/_lib/money";
+import { getRoomImageUrl } from "@/app/_lib/roomImage";
 
-import { useFormState } from "react-dom";
-
-const SUPABASE_ROOMS_URL = process.env.NEXT_PUBLIC_SUPABASE_IMGS_URL;
+import { useActionState } from "react";
 
 const initialState = { error: "" };
 
 function ReservationOverview({ deleteAction, reservation, allowDelete = true, reservationCancelAction, children }) {
   const [showCancel, setShowCancel] = useState(false);
 
-  const [state, formAction] = useFormState(reservationCancelAction, initialState);
+  const [state, formAction] = useActionState(reservationCancelAction, initialState);
 
   async function handleCancel() {
     const cancelForm = new FormData();
@@ -36,7 +36,8 @@ function ReservationOverview({ deleteAction, reservation, allowDelete = true, re
           <Card.Thumbnail zoomOnHover={false}>
             <Image
               fill
-              src={`${SUPABASE_ROOMS_URL}/${reservation.rooms.thumbnail}`}
+              sizes="(max-width: 700px) 100vw, 40vw"
+              src={getRoomImageUrl(reservation.rooms.thumbnail)}
               alt={`${reservation.rooms.name} thumbnail`}
             />
             {/* <Image fill src={"/bg.png"} /> */}
@@ -63,7 +64,8 @@ function ReservationOverview({ deleteAction, reservation, allowDelete = true, re
         <Card.Thumbnail zoomOnHover={false}>
           <Image
             fill
-            src={`${SUPABASE_ROOMS_URL}/${reservation.rooms.thumbnail}`}
+            sizes="(max-width: 700px) 100vw, 40vw"
+            src={getRoomImageUrl(reservation.rooms.thumbnail)}
             alt={`${reservation.rooms.name} thumbnail`}
           />
           {/* <Image fill src={"/bg.png"} /> */}
@@ -91,7 +93,7 @@ function ReservationOverview({ deleteAction, reservation, allowDelete = true, re
             </p>
             <p>
               <span>Total Price</span>
-              <span>${Number(reservation.reserved_price).toFixed(2)}</span>
+              <span>{formatMoney(reservation.reserved_price, reservation.currency ?? "GHS")}</span>
             </p>
           </div>
 

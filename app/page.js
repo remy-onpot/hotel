@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import About from "./_components/About";
+import PropertyAmenities from "./_components/PropertyAmenities";
 import Blog from "./_components/Blog/Blog";
 
 import Gallery from "./_components/Gallery";
@@ -9,9 +10,11 @@ import LoadingSpinner from "./_ui/LoadingSpinner";
 import { redirect } from "next/navigation";
 import ContactSection from "./_components/ContactSection";
 
+import { brand } from "./_lib/brand";
+
 export const metadata = {
-  title: "Hotel Booking App",
-  description: "Hotel Booking App built with NextJS",
+  title: `${brand.name} | ${brand.tagline}`,
+  description: "Discover The Winford Boutique Hotel Achimota in Accra, Ghana. Explore rooms, check availability, and plan your stay.",
 };
 
 export default async function Home() {
@@ -23,6 +26,7 @@ export default async function Home() {
     <>
       <HeroSection bookingSearchAction={bookingSearchAction} />
       <About />
+      <PropertyAmenities />
       <Suspense
         fallback={
           <div className="global-loading">

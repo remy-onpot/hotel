@@ -3,7 +3,7 @@ import Heading from "@/app/_ui/Heading";
 import ProfileForm from "./_components/ProfileForm";
 import { auth } from "@/auth";
 import {
-  getGuestById,
+  getGuestByEmail,
   updateGuest,
   updateGuestWithPwd,
 } from "@/app/_lib/supabase/guests";
@@ -20,9 +20,9 @@ export const metadata = {
 async function Profile() {
   const session = await auth();
   if (!session?.user?.email) redirect("/signin");
+  if (session.user.role === "admin") redirect("/admin/rooms");
 
-  const user = await getGuestById(session?.user.id);
-  const supabaseAccessToken = session?.supabaseAccessToken;
+  const user = await getGuestByEmail(session.user.email);
 
   if (!user) redirect("/signin");
 
@@ -32,10 +32,14 @@ async function Profile() {
     // TODO: STYLE THE TOSTSIFY COMPONENT
 
     prevState = {};
+    const currentSession = await auth();
+    if (!currentSession?.user?.id || String(currentSession.user.id) !== String(user.id)) {
+      return { error: "Please sign in again before updating your profile." };
+    }
     const guestID = user.id;
     const fullname = formData.get("fullname");
     const nationalityWithFlag = formData.get("nationality");
-    const email = formData.get("email");
+    const email = user.email;
     const phone = formData.get("phone");
     const password = formData.get("password");
     const confirm_password = formData.get("confirm_password");
@@ -52,9 +56,7 @@ async function Profile() {
         nationality: nationalityWithFlag,
       });
     } catch (err) {
-      console.log("Caugth Validation");
-      console.log(err.errors);
-      err.errors.forEach((element) => {
+      err.issues.forEach((element) => {
         prevState[element?.path[0] ?? "unknown"] = element.message;
       });
       return { ...prevState };
@@ -76,30 +78,29 @@ async function Profile() {
         };
 
       const hashedPassword = hashSync(password, 10);
-      await updateGuestWithPwd(
-        session.supabaseAccessToken,
+      const result = await updateGuestWithPwd(
         guestID,
         fullname,
         nationality,
         countryFlag,
         phone,
-        email,
         hashedPassword
       );
+      if (result.error) return { error: "Could not update your profile. Please try again." };
     } else {
-      await updateGuest(
-        supabaseAccessToken,
+      const result = await updateGuest(
         guestID,
         fullname,
         nationality,
         countryFlag,
-        phone,
-        email
+        phone
       );
+      if (result.error) return { error: "Could not update your profile. Please try again." };
     }
 
     // REVALIDATE THE DATA FOR THE CACHE
     revalidatePath("/account/profile");
+    return { success: "Your profile was updated." };
   }
 
   return (

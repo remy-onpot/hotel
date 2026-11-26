@@ -1,159 +1,62 @@
-import { formatISO, formatISO9075 } from "date-fns";
-import supabase, { supabaseWithToken } from "./db";
+import "server-only";
+import supabase from "./db";
+import { privilegedQuery } from "./supabaseRiskyClient";
+import {
+  cancelGuestReservation,
+  deleteGuestReservation,
+  updateGuestReservation,
+} from "./privilegedReservations";
 
-export async function getRoomReservations(id) {
-  let { data: reservations, error } = await supabase
-    .from("reservations")
-    .select("*")
-    .eq("room_id", id);
-
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  return reservations;
+function assertQuerySucceeded(operation, error) {
+  if (error) {
+    console.error(`Supabase ${operation} failed:`, error.code ?? "unknown");
+    throw new Error(`Could not ${operation}. Please try again later.`);
+  }
 }
 
-export async function getGuestReservations(guest_id) {
-  let { data: reservations, error } = await supabase
-    .from("reservations")
+export async function getGuestReservations(guestId) {
+  const { data, error } = await privilegedQuery("reservations")
     .select("*, rooms(thumbnail, name, capacity)")
-    .eq("guest_id", guest_id)
+    .eq("guest_id", guestId)
     .is("deleted_at", null);
-
-  if (error) {
-    console.log("SUPABASE ERROR");
-    console.log(error);
-  }
-
-  return reservations;
-}
-/**
- * fullname,
-  email,
-  phone,
-  nationality,
-  countryFlag,
-  reserved_price,
-  nationalID,
- */
-
-export async function createNewReservation(reservationObj) {
-  const {
-    authToken: supabaseAccessToken,
-    room_id,
-    guest_id,
-    guests_count,
-    message,
-    reserved_price,
-    start_date,
-    end_date,
-    stripe_session_id,
-    status,
-  } = reservationObj;
-
-  const { data: reservations, error } = await supabaseWithToken(
-    supabaseAccessToken
-  )
-    .from("reservations")
-    .insert([
-      {
-        room_id,
-        guest_id,
-        guests_count,
-        reserved_price,
-        message,
-        start_date,
-        end_date,
-        stripe_session_id,
-        status,
-      },
-    ])
-    .select();
-
-  console.log({ NEW_RESERVATION: reservations });
-  if (error) {
-    // console.log("===== CREATION ERROR =====");
-    console.log({ RESERVATION_ERROR: error });
-    // console.log(session);
-  }
-
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  return reservations;
+  assertQuerySucceeded("load reservations", error);
+  return data ?? [];
 }
 
-export async function deleteReservation(supabaseAccessToken, id) {
-  const { data: reservations, error } = await supabaseWithToken(
-    supabaseAccessToken
-  )
-    .from("reservations")
-    .update({ deleted_at: formatISO9075(new Date()) })
-    .eq("id", id);
-
-  console.log("datetime", formatISO9075(new Date()));
-  return reservations;
+export async function deleteReservation(guestId, id) {
+  return deleteGuestReservation(id, guestId);
 }
 
-export async function getReservationByID(id) {
-  let { data: reservations, error } = await supabase
-    .from("reservations")
+export async function getRoomReservationsResult(id) {
+  const { data, error } = await supabase.from("reservations")
+    .select("id, room_id, start_date, end_date, status, hold_expires_at")
+    .eq("room_id", id);
+  if (error) console.error("Supabase room reservation lookup failed:", error.code ?? "unknown");
+  return { data, error };
+}
+
+export async function getReservationByID(id, guestId) {
+  if (!guestId) throw new Error("A guest identity is required to load a reservation.");
+  const { data, error } = await privilegedQuery("reservations")
     .select("*, rooms(thumbnail, name, capacity, price)")
     .eq("id", id)
-    .single();
-
-  return reservations;
+    .eq("guest_id", guestId)
+    .maybeSingle();
+  assertQuerySucceeded("load reservation", error);
+  return data;
 }
 
-export async function updateReseration(
-  supabaseAccessToken,
-  id,
-  price,
-  guests_count,
-  start_date,
-  end_date
-) {
-  const { data: reservations, error } = await supabaseWithToken(
-    supabaseAccessToken
-  )
-    .from("reservations")
-    .update({
-      reserved_price: price,
-      guests_count,
-      start_date: formatISO9075(new Date(start_date)),
-      end_date: formatISO9075(new Date(end_date)),
-    })
-    .eq("id", id);
-
-  console.log("SUPABASE ERROR");
-  console.log(error);
-
-  return reservations;
+export async function updateReservationForGuest(guestId, id, price, guestsCount, startDate, endDate) {
+  return updateGuestReservation({
+    id,
+    guestId,
+    reservedPrice: price,
+    guestsCount,
+    startDate: startDate.toISOString().slice(0, 10),
+    endDate: endDate.toISOString().slice(0, 10),
+  });
 }
 
-export async function cancelReservation(supabaseAccessToken, id) {
-  const { data: reservations, error } = await supabaseWithToken(
-    supabaseAccessToken
-  )
-    .from("reservations")
-    .update({ status: "cancelled" })
-    .eq("id", id);
-
-  console.log("datetime", formatISO9075(new Date()));
-  return reservations;
-}
-
-export async function getReservationByStripeSessionId(session_id) {
-  console.log({ session_id });
-  let { data: reservation, error } = await supabase
-    .from("reservations")
-    .select("*, rooms(thumbnail, name)")
-    .eq("stripe_session_id", session_id)
-    .limit(1)
-    .single();
-
-  if (error) {
-    console.log("SUPABASE ERROR");
-    console.log(error);
-  }
-
-  return reservation;
+export async function cancelReservation(guestId, id) {
+  return cancelGuestReservation(id, guestId);
 }

@@ -1,27 +1,31 @@
 
 .roomBookingForm {
-  box-shadow: 2px 2px 8px 6px #eee;
   width: 100%;
+  min-width: 0;
+  background: #fffdfb;
 }
+
+.roomBookingForm > :first-child { min-width: 0; max-width: 100%; }
 
 @media(min-width: 1000px) {
   .roomBookingForm {
-    display: grid;
-    grid-template-columns: 1fr auto;
+    display: block;
   }
 }
 
 .formItem {
   width: 100%;
-  /* padding: 20px; */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid #eee8df;
 }
 
 .formInput {
-  padding: 20px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 20px;
-  border-left: 1px solid #dedede;
+  border-bottom: 1px solid #f0ebe4;
 }
 
 @media(min-width: 1000px) {
@@ -31,8 +35,12 @@
   }
 }
 
+@media (max-width: 520px) {
+  .formItem { grid-template-columns: 1fr; }
+}
+
 .formIcon {
-  color: rgb(168, 13, 44);
+  color: #9b7848;
   font-size: 16px;
 }
 
@@ -44,13 +52,16 @@
 
 
 .formControl label {
-  color: #181b20;
-  font-size: 17px;
+  color: #76654e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .formControl input, .formControl select {
-  color: #656a70;
-  font-size: 17px;
+  color: #4c4944;
+  font-size: 14px;
   width: 100%;
   padding: 4px 0px;
   border: none;
@@ -72,7 +83,7 @@
 }
 
 .formButton {
-  background-color: rgb(168, 13, 44);
+  background-color: #8b6840;
   color: #fff;
   border: none;
   outline: none;
@@ -81,14 +92,23 @@
   /* height: 100%; */
   cursor: pointer;
   transition: all 300ms linear;
-  padding: 40px;
+  padding: 16px 24px;
+  min-height: 52px;
 }
 
 .formButton:not(:disabled):hover {
-  background-color: rgb(128, 12, 35);
+  background-color: #725534;
 }
 
 .formButton:disabled {
-  background-color: rgb(219, 46, 81);
+  background-color: #bba98e;
   cursor: not-allowed;
+}
+
+.availabilityError {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.85rem 1.25rem;
+  background: #fff2f0;
+  color: #8c2525;
 }

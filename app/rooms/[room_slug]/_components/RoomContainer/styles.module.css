@@ -1,9 +1,136 @@
+.roomPage {
+  width: 100%;
+  max-width: 1240px;
+  min-width: 0;
+  margin-inline: auto;
+  padding-inline: 20px;
+  box-sizing: border-box;
+}
+
+.roomHeader {
+  position: static;
+  z-index: auto;
+  width: 100%;
+  min-width: 0;
+  min-width: 0;
+  padding: 42px 0 28px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+
+.eyebrow {
+  color: #9b7848;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
 .heading {
-  text-align: center ;
-  margin: 20px 0px;
+  max-width: 100%;
+  margin: 8px 0;
+  color: #292722;
+  font-size: clamp(30px, 4vw, 42px);
   font-weight: 500;
-  word-spacing: 1px;
-  font-size: 38px;
-  color: #161616;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.heading > span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: inherit;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.roomHeader p {
+  max-width: 100%;
+  margin: 0 auto;
+  line-height: 1.5;
+  color: #77736d;
+  font-size: 15px;
+}
+
+.roomOverview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, .8fr);
+  align-items: start;
+  gap: 28px;
+  margin-bottom: 64px;
+}
+
+.galleryColumn, .bookingColumn { min-width: 0; }
+
+.bookingColumn {
+  overflow: hidden;
+  border: 1px solid #e9e2d8;
+  border-radius: 8px;
+  background: #fffdfb;
+  box-shadow: 0 10px 30px rgb(38 30 21 / 6%);
+}
+
+.bookingIntro {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #eee8df;
+}
+
+.bookingIntro span:first-child {
+  color: #735634;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.bookingIntro span:last-child { color: #77736d; font-size: 13px; }
+
+@media (max-width: 980px) {
+  .roomOverview { grid-template-columns: minmax(0, 1fr); }
+  .bookingColumn { width: 100%; }
+}
+
+.mobileBookingLink {
+  display: none;
+}
+
+@media (max-width: 719px) {
+  .roomPage { padding-inline: 16px; }
+  .roomHeader { padding: 30px 0 20px; }
+  .heading {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 8px;
+    font-size: clamp(24px, 7.5vw, 30px);
+    line-height: 1.18;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .roomHeader p { padding-inline: 12px; }
+  .roomHeader p { max-width: 32ch; }
+  .roomOverview { width: 100%; min-width: 0; gap: 22px; margin-bottom: 44px; }
+  .roomOverview > *, .galleryColumn, .bookingColumn { min-width: 0; max-width: 100%; }
+  .mobileBookingLink {
+    display: block;
+    position: fixed;
+    z-index: 30;
+    inset-inline: 16px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    min-height: 52px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    background: #a80d2c;
+    color: white;
+    text-align: center;
+    font-weight: 700;
+    box-shadow: 0 4px 18px #0003;
+  }
+
+  :global(body) {
+    padding-bottom: 76px;
+  }
 }
 

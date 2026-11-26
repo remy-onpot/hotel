@@ -1,39 +1,31 @@
 /** @type {import('next').NextConfig} */
+const imageBaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_IMGS_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
+const imageUrl = imageBaseUrl ? new URL(imageBaseUrl) : null;
+const storagePath = imageUrl?.pathname.includes("/storage/v1/object/public/")
+  ? `${imageUrl.pathname.replace(/\/+$/, "")}/**`
+  : "/storage/v1/object/public/**";
+
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  allowedDevOrigins: ["*.eun1.devtunnels.ms"],
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000"],
+    },
   },
-
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "kapumuyablpuibhumzdj.supabase.co",
-        port: "",
-        pathname: "/storage/v1/object/public/rooms-imgs/**",
-      },
-    ],
-  },
-
-  async headers() {
-    return [
-      {
-        source: "/api/guests",
-        headers: [
-          { key: "Access-Control-Allow-Credentials", value: "true" },
+    qualities: [75, 90, 100],
+    remotePatterns: imageUrl
+      ? [
           {
-            key: "Access-Control-Allow-Origin",
-            value: process.env.NEXT_PUBLIC_BACK_OFFICE_URL,
+            protocol: imageUrl.protocol.slice(0, -1),
+            hostname: imageUrl.hostname,
+            port: imageUrl.port,
+            pathname: storagePath,
           },
-          { key: "Access-Control-Allow-Methods", value: "GET" },
-          {
-            key: "Access-Control-Allow-Headers",
-            value:
-              "Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
-          },
-        ],
-      },
-    ];
+        ]
+      : [],
   },
 };
 

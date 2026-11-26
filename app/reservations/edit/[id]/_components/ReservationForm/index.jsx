@@ -2,6 +2,7 @@
 
 import ConfirmationButton from "../ConfirmationButton";
 import styles from "./styles.module.css";
+import CustomSelect from "@/app/_ui/CustomSelect";
 
 const initialState = {
   fullname: "",
@@ -17,23 +18,18 @@ function ReservationForm({ capacity, setGuests, guests, handleSubmit, children }
     <form action={handleSubmit} className={styles.form}>
       <div>
         <div className={styles.formControl}>
-          <label htmlFor="" className={styles.formLabel}>
+          <label id="reservation-guests-label" className={styles.formLabel}>
             Guests Number:
           </label>
-          <select
-            defaultValue={guests}
-            name=""
-            id=""
+          <CustomSelect
+            options={Array.from({ length: capacity ?? 0 }, (_, index) => ({ value: String(index + 1), label: String(index + 1) }))}
+            defaultValue={guests ? { value: String(guests), label: String(guests) } : null}
+            name="guests_count"
+            ariaLabelledBy="reservation-guests-label"
             className={styles.formInput}
-            onChange={(e) => (e.target.value ? setGuests(e.target.value) : null)}
-          >
-            <option value="">Select guests number</option>
-            {Array.from(Array(capacity ?? 0)).map((item, index) => (
-              <option key={index} value={index + 1}>
-                {index + 1}
-              </option>
-            ))}
-          </select>
+            placeholder="Select guests number"
+            onChange={(option) => option && setGuests(option.value)}
+          />
         </div>
         {children}
       </div>

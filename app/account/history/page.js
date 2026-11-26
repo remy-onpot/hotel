@@ -4,22 +4,18 @@ import ReservationCard from "./_components/ReservationCard";
 import { getGuestReservations } from "@/app/_lib/supabase/reservations";
 import { auth } from "@/auth";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Booking History",
-  description: "Reservations history at the Hotel Booking App ",
+  description: "Review and manage your reservations at The Winford Boutique Hotel Achimota.",
 };
 
 async function History() {
-  let session = {};
-  let reservations = [];
-  try {
-    session = await auth();
-    console.log({ HISTORY_SESSION: session });
-    reservations = (await getGuestReservations(session.user?.id)) ?? [];
-  } catch (err) {
-    console.log(err);
-  }
+  const session = await auth();
+  if (!session?.user?.email) redirect("/signin");
+  if (session.user.role === "admin") redirect("/admin/rooms");
+  const reservations = await getGuestReservations(session.user.id);
 
   return (
     <>

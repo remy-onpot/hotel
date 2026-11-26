@@ -1,25 +1,26 @@
 import { auth } from "@/auth";
-import Footer from "./_components/Footer";
-import Navbar from "./_ui/Navbar";
+import PublicChrome from "./PublicChrome";
 import styles from "./styles.css";
 
-import { Roboto } from "next/font/google";
 import { signOutAction } from "./_lib/actions";
+import { brand } from "./_lib/brand";
 
-const roboto_font = Roboto({
-  subsets: ["latin"],
-  weight: ["100", "300", "400", "500", "700", "900"],
-  style: "normal",
-});
+export const metadata = {
+  title: {
+    default: `${brand.name} | Boutique hotel in Accra`,
+    template: `%s | ${brand.name}`,
+  },
+  description: "Stay at The Winford Boutique Hotel Achimota in Tantra, New Achimota, Accra. Explore rooms, check availability, and plan your visit.",
+};
 
 export default async function RootLayout({ children }) {
   const session = await auth();
   return (
     <html lang="en">
-      <body className={roboto_font.className}>
-        <Navbar user={session?.user} signOutAction={signOutAction} />
-        <main>{children}</main>
-        <Footer />
+      <body>
+        <PublicChrome user={session?.user} signOutAction={signOutAction}>
+          {children}
+        </PublicChrome>
       </body>
     </html>
   );

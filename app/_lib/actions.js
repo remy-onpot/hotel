@@ -3,19 +3,20 @@ import { auth, signIn, signOut } from "@/auth";
 import { contactSchema, signInSchema, signupSchema } from "./zodSchemas";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { areIntervalsOverlapping, isBefore, isValid } from "date-fns";
+import { isBefore, isValid } from "date-fns";
 import {
   cancelReservation,
   getReservationByID,
-  getRoomReservations,
-  updateReseration,
+  getRoomReservationsResult,
+  updateReservationForGuest,
 } from "./supabase/reservations";
 import { bookingTotalPrice } from "../utils/reservationsCalcs";
 import { daysDifferCount } from "../utils/datetime";
 import { revalidatePath } from "next/cache";
 import { createGuest, getGuestByEmail } from "./supabase/guests";
-import { hash, hashSync } from "bcryptjs";
+import { hashSync } from "bcryptjs";
 import { createMessage } from "./supabase/inbox";
+import { canEditReservation, dateRangesOverlap, isBlockingReservation, isGuestCountWithinCapacity } from "./bookingRules";
 
 export async function authAction(prevState, formData) {
   // await new Promise((res) => setTimeout(res, 500));
@@ -29,7 +30,7 @@ export async function authAction(prevState, formData) {
   try {
     signInSchema.parse({ email, password });
   } catch (err) {
-    err.errors.forEach((element) => {
+    err.issues.forEach((element) => {
       prevState[element?.path[0] ?? "unknown"] = element.message;
     });
 
@@ -44,21 +45,25 @@ export async function authAction(prevState, formData) {
     loginSuccess = false;
     return { ...prevState, criticalError: "Wrong email or password!" };
   } finally {
-    if (loginSuccess)
+    if (loginSuccess) {
+      const session = await auth();
       redirect(
-        cookies().has("pending_reservation")
-          ? "/reservations/checkout"
-          : "/account/history"
+        session?.user?.role === "admin"
+          ? "/admin/rooms"
+          : (await cookies()).has("pending_reservation")
+            ? "/reservations/checkout"
+            : "/account/history"
       );
+    }
   }
 }
 
 export async function bookingCancelAction() {
   // await new Promise((res) => setTimeout(res, 5000));
 
-  const cookiesStore = cookies();
+  const cookiesStore = await cookies();
   if (cookiesStore.has("pending_reservation")) {
-    cookies().delete("pending_reservation");
+    cookiesStore.delete("pending_reservation");
     redirect("/rooms", "replace");
   }
 }
@@ -81,7 +86,7 @@ export async function reservationUpdateAction(prevState, formData) {
       ...prevState,
       error: "Invalid date, please choose a range from the calendar",
     };
-  if (isBefore(end_date, start_date))
+  if (isBefore(end_date, start_date) || start_date.getTime() === end_date.getTime())
     return {
       ...prevState,
       error: "Invalid date, please choose a valid rate range from the calendar",
@@ -97,7 +102,7 @@ export async function reservationUpdateAction(prevState, formData) {
         "Unauthorized to perform this action, please sign in and try again",
     };
 
-  const target_reservation = await getReservationByID(reservation_id);
+  const target_reservation = await getReservationByID(reservation_id, session.user.id);
 
   if (!target_reservation)
     return {
@@ -106,25 +111,24 @@ export async function reservationUpdateAction(prevState, formData) {
         "Error, you are attempting to update an unexisted reservation. please access through your reservation history!",
     };
 
+  if (target_reservation.guest_id !== session.user.id)
+    return { ...prevState, error: "Unauthorized to perform this action!" };
+  if (!canEditReservation(target_reservation, new Date().toISOString().slice(0, 10)))
+    return { ...prevState, error: "This reservation can no longer be edited." };
+
+  if (!isGuestCountWithinCapacity(guests_count, target_reservation.rooms.capacity))
+    return { ...prevState, error: "Invalid guests number! Please choose a number from the dropdown area." };
+
   // MAKING SURE THAT THE NEW SELECTED DATE RANGE DOES NOT INTERSECT WITH AN ALREADY BOOKED ONE
   // EXCEPT THE CURRENT RESERVATION THAT IS MEANT TO BE UPDATED
-  const planned_room_reservations = await getRoomReservations(
+  const { data: planned_room_reservations, error: availabilityError } = await getRoomReservationsResult(
     target_reservation.room_id
   );
-  const room_busy_days = planned_room_reservations.filter((item) =>
-    item.id != reservation_id
-      ? {
-          start: new Date(item.start_date),
-          end: new Date(item.end_date),
-        }
-      : false
-  );
-
-  if (
-    room_busy_days.find((item) =>
-      areIntervalsOverlapping(item, { start: start_date, end: end_date })
-    )
-  ) {
+  if (availabilityError) return { ...prevState, error: "Could not check room availability. Please try again." };
+  const overlaps = planned_room_reservations?.some((item) => item.id != reservation_id &&
+    isBlockingReservation(item) &&
+    dateRangesOverlap(item.start_date, item.end_date, start_date.toISOString().slice(0, 10), end_date.toISOString().slice(0, 10)));
+  if (overlaps) {
     return {
       ...prevState,
       error:
@@ -132,31 +136,22 @@ export async function reservationUpdateAction(prevState, formData) {
     };
   }
 
-  // CHECKING FOR THE USER AUTHORISATION TO UPDATE THE RESERVATION
-  if (target_reservation.guest_id !== session.user.id)
-    return { ...prevState, error: "Unauthorized to perform this action!" };
-
-  if (guests_count < 1 || guests_count > target_reservation.rooms.capacity)
-    return {
-      ...prevState,
-      error:
-        "Invalid guests number! please choose a number from the dropdown area",
-    };
-
   const totalNights = daysDifferCount(end_date, start_date);
   const new_total = bookingTotalPrice(
     target_reservation.rooms.price,
     guests_count,
     totalNights
   );
-  await updateReseration(
-    session.supabaseAccessToken,
+  const { error: updateError } = await updateReservationForGuest(
+    session.user.id,
     reservation_id,
     new_total,
     guests_count,
     start_date,
     end_date
   );
+  if (updateError?.code === "23P01") return { ...prevState, error: "Those dates were just booked. Please choose another date range." };
+  if (updateError) return { ...prevState, error: "Could not update your reservation. Please try again." };
 
   revalidatePath(`/reservations/edit/${reservation_id}`);
   return { status: "success" };
@@ -164,12 +159,17 @@ export async function reservationUpdateAction(prevState, formData) {
 
 export async function reservationCancelAction(prevState, formData) {
   const reservation_id = formData.get("reservation_id");
-
   const session = await auth();
-
-  await cancelReservation(session?.supabaseAccessToken, reservation_id);
+  if (!session?.user?.id) return { error: "Please sign in before cancelling." };
+  const reservation = await getReservationByID(reservation_id, session.user.id);
+  if (!reservation || String(reservation.guest_id) !== String(session.user.id)) return { error: "Reservation not found." };
+  if (!["confirmed", "unconfirmed"].includes(reservation.status) || new Date(reservation.start_date) <= new Date()) return { error: "This reservation can no longer be cancelled online." };
+  const { error } = await cancelReservation(session.user.id, reservation_id);
+  if (error?.code === "NOT_CANCELLABLE") return { error: "This reservation can no longer be cancelled online." };
+  if (error) return { error: "Could not cancel your reservation. Please try again." };
 
   revalidatePath("/account/history");
+  return { status: "success" };
 }
 
 export async function signupAction(prevState, formData) {
@@ -187,9 +187,7 @@ export async function signupAction(prevState, formData) {
       confirm_password,
     });
   } catch (err) {
-    console.log("Caugth Validation");
-    console.log(err);
-    err.errors.forEach((element) => {
+    err.issues.forEach((element) => {
       prevState[element?.path[0] ?? "unknown"] = element.message;
     });
     return { ...prevState };
@@ -204,12 +202,12 @@ export async function signupAction(prevState, formData) {
     " ",
     "+"
   )}&background=161616&color=F1F1F1`;
-  await createGuest(fullname, email, avatar, hashSync(password, 10));
+  const { error: createError } = await createGuest(fullname, email, avatar, hashSync(password, 10));
+  if (createError) return { ...prevState, critical: "Could not create your account. Please check the email address or try again." };
 
   try {
     await signIn("credentials", { email, password, redirect: false });
   } catch (err) {
-    console.log(err);
     return {
       ...prevState,
       authErr:
@@ -226,6 +224,10 @@ export async function contactAction(state, formData) {
     errors: {},
     isSuccess: false,
   };
+
+  if (String(formData.get("website") ?? "").trim()) {
+    return { ...currentState, isSuccess: true };
+  }
 
   const fullname = formData.get("fullname");
   const email = formData.get("email");
@@ -248,7 +250,7 @@ export async function contactAction(state, formData) {
   }
 
   try {
-    await createMessage({ fullname, email, phone, message });
+    await createMessage(validation.data);
   } catch (err) {
     return {
       ...currentState,

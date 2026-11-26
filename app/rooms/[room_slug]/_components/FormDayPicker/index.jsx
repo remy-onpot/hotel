@@ -4,56 +4,51 @@ import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import styles from "./styles.module.css";
-import { getReservationByID, getRoomReservations } from "@/app/_lib/supabase/reservations";
-import { useParams } from "next/navigation";
+import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
-import Loader from "@/app/_ui/Loader";
 
 function FormDayPicker({ handleDateSelection, start, end }) {
-  const [disableddDays, setDisabledDays] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { room_slug, id } = useParams();
   const calendarRangeRef = useRef({ start: new Date(2024, 0), end: new Date(2027, 11) });
+  const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (!room_slug && !id) return;
-    async function getBusyDays() {
-      setIsLoading(true);
-      let reservations = [];
-      let busy_days = [];
-
-      if (id) {
-        const reservation_target = await getReservationByID(id);
-
-        reservations = await getRoomReservations(reservation_target.room_id);
-        busy_days = reservations.filter((item) =>
-          id != item.id ? { before: item.end_date, after: item.start_date } : false
-        );
-      } else {
-        reservations = await getRoomReservations(room_slug);
-        busy_days = reservations.map((item) => ({ before: item.end_date, after: item.start_date }));
-      }
-
-      // console.log("BLOCKED");
-      // console.log(reservations.map((item) => ({ before: item.end_date, after: item.start_date })));
-      setDisabledDays(busy_days);
-      setIsLoading(false);
-    }
-
-    getBusyDays();
+    const mediaQuery = window.matchMedia("(max-width: 719px)");
+    const updateViewport = () => setIsMobile(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
-  if (isLoading)
-    return (
-      <div className={"section-loader"}>
-        <Loader />
-      </div>
-    );
+  const calendarVisible = !isMobile || isOpen;
+  const dateSummary = start
+    ? `${format(start, "MMM d")}${end ? ` – ${format(end, "MMM d")}` : " – Select check-out"}`
+    : "Choose check-in and check-out";
 
   return (
-    <div className={styles.datepicker}>
-      <div>
-        <DayPicker
+    <div className={styles.datePickerSection}>
+      <button
+        className={styles.calendarToggle}
+        type="button"
+        aria-controls="room-date-calendar"
+        aria-expanded={calendarVisible}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <span>
+          <strong>{start && end ? "Stay dates" : "Select your stay dates"}</strong>
+          <span>{dateSummary}</span>
+        </span>
+        <span className={styles.toggleIcon} aria-hidden="true">{calendarVisible ? "−" : "+"}</span>
+      </button>
+      <div
+        id="room-date-calendar"
+        className={`${styles.calendarPanel} ${calendarVisible ? styles.calendarOpen : ""}`}
+        aria-hidden={!calendarVisible}
+        inert={!calendarVisible}
+      >
+        <div className={styles.datepicker}>
+          <div>
+            <DayPicker
           captionLayout="dropdown"
           min={0}
           onSelect={(range) => handleDateSelection(range)}
@@ -62,8 +57,8 @@ function FormDayPicker({ handleDateSelection, start, end }) {
           startMonth={calendarRangeRef.current.start}
           endMonth={calendarRangeRef.current.end}
           weekStartsOn={1}
-          numberOfMonths={2}
-          disabled={[{ before: new Date() }, ...disableddDays]}
+          numberOfMonths={1}
+          disabled={{ before: new Date() }}
           footer={
             <p>
               <span className={styles.footerIcon}>
@@ -81,7 +76,9 @@ function FormDayPicker({ handleDateSelection, start, end }) {
             chevron: styles.chevron,
             footer: styles.datepickerFooter,
           }}
-        />
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

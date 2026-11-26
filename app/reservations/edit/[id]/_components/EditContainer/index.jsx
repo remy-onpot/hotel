@@ -5,13 +5,13 @@ import ReservationForm from "../ReservationForm";
 
 import FormDayPicker from "@/app/rooms/[room_slug]/_components/FormDayPicker";
 import { formatISO } from "date-fns";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
 const initialState = {};
 
 function EditContainer({ reservation, reservationUpdateAction }) {
-  const [state, formAction] = useFormState(reservationUpdateAction, initialState);
+  const [state, formAction] = useActionState(reservationUpdateAction, initialState);
 
   const [startDate, setStartDate] = useState(new Date(reservation.start_date));
   const [endDate, setEndDate] = useState(new Date(reservation.end_date));

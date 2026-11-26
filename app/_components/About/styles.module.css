@@ -5,9 +5,11 @@
 
 @media(min-width: 720px) {
   .aboutContainer {
-    display: flex;
-    justify-content: space-between;
-    gap: 56px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 48px;
+    row-gap: 44px;
   }
 }
 
@@ -16,6 +18,110 @@
   line-height: 1.8;
   font-size: 18px;
   color: #333;
+}
+
+.hotelDetails {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  min-height: 78px;
+  padding: 16px 24px;
+  border: 1px solid #e8dfd2;
+  background: #f8f4ed;
+  color: #292722;
+}
+
+.hotelDetails > span:not(.timeDivider) {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.hotelDetails strong {
+  color: #88663e;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.hotelDetails span span {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.timeDivider {
+  width: 1px;
+  height: 34px;
+  background: #ded2c0;
+}
+
+.amenities {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  grid-column: 1 / -1;
+  margin-top: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.amenities li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-width: 0;
+  min-height: 150px;
+  padding: 22px 16px;
+  border: 1px solid #eee9e2;
+  background: #fffdfb;
+  text-align: center;
+}
+
+.amenityIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f5efe7;
+  color: #9b7848;
+  font-size: 15px;
+}
+
+.amenityCopy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  justify-items: center;
+}
+
+.amenityTitle {
+  color: #292722;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.amenityDetail {
+  color: #77736d;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+@media (min-width: 720px) and (max-width: 1020px) {
+  .amenities { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 719px) {
+  .amenities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .amenities li { min-height: 135px; }
+  .hotelDetails { gap: 16px; padding-inline: 12px; }
+  .hotelDetails span span { font-size: 13px; }
 }
 
 .gallery {
@@ -29,14 +135,14 @@
 
 @media(min-width: 720px) {
   .gallery {
-    width: 55%;
-    flex-grow: 1;
-    flex-shrink: 0;
+    width: 100%;
   }
 }
 
 .gallery img {
   width: 100%;
   aspect-ratio: 16/9;
+  object-fit: cover;
+  object-position: center;
 }
 

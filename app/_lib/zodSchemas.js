@@ -23,13 +23,13 @@ export const signInSchema = z.object({
 });
 
 export const bookingSchema = z.object({
-  guests_count: z.number({ message: "guests number is invalid" }).gt(0),
+  guests_count: z.number({ error: "guests number is invalid" }).gt(0),
   start_date: z
-    .string({ message: "date is invalid" })
-    .date({ message: "date is invalid" }),
+    .string({ error: "date is invalid" })
+    .date({ error: "date is invalid" }),
   end_date: z
-    .string({ message: "date is invalid" })
-    .date({ message: "date is invalid" }),
+    .string({ error: "date is invalid" })
+    .date({ error: "date is invalid" }),
 });
 
 export const reservationSchema = z.object({
@@ -58,11 +58,11 @@ export const reservationSchema = z.object({
 export const signupSchema = z
   .object({
     fullname: z
-      .string({ required_error: "Required" })
+      .string({ error: (issue) => issue.input === undefined ? "Required" : "Full name is invalid" })
       .min(3, { message: "Name must be at least 3 characters" })
       .max(64, "Name cannot exceed 64 charcters"),
     email: z.string().email(),
-    password: z.string(6).min(6, { message: "Password is required" }),
+    password: z.string().min(6, { message: "Password is required" }),
     confirm_password: z
       .string()
       .min(6, { message: "Password confirmation is required" }),
@@ -74,13 +74,15 @@ export const signupSchema = z
 
 export const contactSchema = z.object({
   fullname: z
-    .string({ required_error: "Fullname is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Fullname is required" : "Fullname is invalid" })
     .min(3, { message: "Name must be at least 3 characters" })
     .max(64, "Name cannot exceed 64 charcters"),
   email: z.string().email(),
   phone: z
     .string()
-    .regex(/^\+?[0-9]{1,4}?[-.\s]?(\(?\d{1,3}?\)?[-.\s]?){1,4}\d{1,4}$/, {
+    .min(7)
+    .max(32)
+    .regex(/^\+?[0-9()\-\.\s]+$/, {
       message: "Invalid phone number",
     }),
   message: z

@@ -1,128 +1,77 @@
-import supabase, { supabaseWithToken } from "./db";
+import "server-only";
+import { privilegedQuery } from "./supabaseRiskyClient";
 
-import { riskySupabaseClient } from "./supabaseRiskyClient";
+import { privilegedGuestByEmail, privilegedGuestById, privilegedGuestPasswordByEmail, privilegedCreateGuest } from "./supabaseRiskyClient";
 export async function getGuestById(id) {
-  let request = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/guests?id=${id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_KEY}`,
-      },
-    }
-  );
+  if (!/^\d+$/.test(String(id ?? ""))) return null;
 
-  const response = await request.json();
+  const { data: guest, error } = await privilegedGuestById(Number(id));
 
-  const { data: guests, error } = response;
-
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  return guests;
+  if (error) throw new Error(`Unable to load guest: ${error.message}`);
+  return guest;
 }
 
 export async function getGuestByEmail(email) {
-  let request = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/guests?email=${email}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_KEY}`,
-      },
-    }
-  );
+  if (typeof email !== "string" || !email.trim()) return null;
 
-  const response = await request.json();
-
-  const { data: guests, error } = response;
-
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
+  const { data: guest, error } = await privilegedGuestByEmail(email.trim());
 
   if (error) {
-    console.log({ error: error.message });
-    throw new Error(error.message);
+    throw new Error(`Unable to load guest: ${error.message}`);
   }
 
-  return guests;
+  return guest;
 }
 
 export async function getFullGuestByEmail(email) {
-  // THIS REQUEST WILL GET THE USER INCLUDING THE PASSWORD FOR SIGN IN PUROSES
-  let { data: guests, error } = await riskySupabaseClient
-    .from("guests")
-    .select("*")
-    .eq("email", email)
-    .single();
-
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
+  const { data: guests, error } = await privilegedGuestPasswordByEmail(email);
+  if (error?.code === "PGRST116") return null;
+  if (error) throw new Error("Unable to authenticate guest.");
   return guests;
 }
 
 export async function updateGuest(
-  supabaseAccessToken,
   id,
   name,
   nationality,
   countryFlag,
   phone,
-  email,
   nationalID
 ) {
-  const { data, error } = await supabaseWithToken(supabaseAccessToken)
-    .from("guests")
+  const { data, error } = await privilegedQuery("guests")
     .update({
       fullname: name,
       nationality,
       phone,
-      email,
       countryFlag,
       nationalID,
     })
     .eq("id", id)
     .select();
 
-  console.log({ data });
-
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  if (error) {
-    console.log("supa error");
-    console.log(error);
-  }
-
-  return data;
+  return { data, error };
 }
 
 export async function updateGuestWithPwd(
-  supabaseAccessToken,
   id,
   name,
   nationality,
   countryFlag,
   phone,
-  email,
   password
 ) {
-  const { data, error } = await supabaseWithToken(supabaseAccessToken)
-    .from("guests")
+  const { data, error } = await privilegedQuery("guests")
     .update({
       fullname: name,
       nationality,
       phone,
-      email,
       countryFlag,
       password,
     })
     .eq("id", id)
     .select();
 
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  if (error) {
-    console.log("supa error");
-    console.log(error);
-  }
-
-  return data;
+  return { data, error };
 }
 
 export async function createGuest(
@@ -135,9 +84,7 @@ export async function createGuest(
   countryFlag = "",
   nationalID = ""
 ) {
-  const { data, error } = await riskySupabaseClient
-    .from("guests")
-    .insert([
+  const { data, error } = await privilegedCreateGuest(
       {
         fullname,
         email,
@@ -147,14 +94,8 @@ export async function createGuest(
         countryFlag,
         nationalID,
         password,
-      },
-    ])
-    .select();
+      }
+    );
 
-  if (error) {
-    console.log("ERROR SUPABASE");
-    console.log(error);
-  }
-
-  return data;
+  return { data, error };
 }

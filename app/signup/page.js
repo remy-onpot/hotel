@@ -6,17 +6,18 @@ import { cookies } from "next/headers";
 
 export const metadata = {
   title: "Sign Up",
-  description: "Sign Up to the Hotel Booking App ",
+  description: "Create an account to plan and manage your stays at The Winford Boutique Hotel Achimota.",
 };
 
 async function Page() {
   const session = await auth();
-  const redirectURL = cookies().has("pending_reservation") ? "/reservations/checkout" : "/account/history";
+  const cookieStore = await cookies();
+  const redirectURL = cookieStore.has("pending_reservation") ? "/reservations/checkout" : "/account/history";
   if (session?.user) redirect(redirectURL);
 
   return (
     <>
-      <Banner title={"REGISTER"} />
+      <Banner title={"Your stay, all in one place"} />
       <SignUpForm />
     </>
   );

@@ -1,24 +1,25 @@
 import Heading from "@/app/_ui/Heading";
 import styles from "./styles.module.css";
 
-function RoomDescription() {
+function RoomDescription({ description }) {
   return (
     <div className={styles.description}>
-      <Heading className="text-center">Room Description</Heading>
+      <Heading className="text-center">Settle into something special</Heading>
 
       <hr className="decriptionDivider" />
 
       <div className={styles.descriptionContent}>
+        {description && <p>{description}</p>}
         <p>
-          Etiam at hendrerit sem. Quisque porta velit quis dolor interdum, sit amet imperdiet leo posuere. Nam id nisl
-          scelerisque, commodo ex vel, vulputate eros. Aenean sit amet rutrum odio. Suspendisse faucibus ac turpis et
-          tincidunt. Cras non quam mauris. Nullam commodo a urna sed faucibus. Nam dolor odio, eleifend quis dictum
-          aliquet, ultrices vel purus.
+          Each room is individually decorated and includes air conditioning, a
+          private bathroom, a 32-inch LED TV with satellite channels and
+          streaming, free Wi-Fi, and a laptop-friendly workspace. Rooms have
+          Tempur-Pedic mattresses and Frette Italian sheets.
         </p>
         <p>
-          Phasellus at congue lectus, sit amet tincidunt nunc. Vivamus fermentum nunc ac dui faucibus consequat.
-          Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Proin hendrerit sit
-          amet est at laoreet. Nam auctor rhoncus accumsan. Morbi et turpis ac ligula tempor tincidunt.
+          Minibars, slippers, and rainfall showers are available. Connecting or
+          adjoining rooms can be requested. Review the in-room features listed
+          above for this room before booking.
         </p>
       </div>
     </div>

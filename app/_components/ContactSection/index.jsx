@@ -1,6 +1,6 @@
 import Heading from "@/app/_ui/Heading";
 import ContactForm from "../ContactForm";
-import ContactMap from "../ContactMap";
+import LocationCard from "../LocationCard";
 import styles from "./styles.module.css";
 import { contactAction } from "@/app/_lib/actions";
 
@@ -9,11 +9,11 @@ function ContactSection() {
     <section className={styles.contactSection}>
       <div className="container">
         <Heading className={`text-center ${styles.heading}`}>
-          Contact Us
+          Plan your stay at The Winford
         </Heading>
         <div className={`${styles.contactContainer}`}>
           <ContactForm contactAction={contactAction} />
-          <ContactMap />
+          <LocationCard />
         </div>
       </div>
     </section>

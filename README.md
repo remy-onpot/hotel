@@ -8,7 +8,7 @@
 4. [Technologies Used](#technologies-used)
 5. [Installation](#installation)
 6. [Important Notes](#important-notes)
-7. [Stripe Test Cards](#stripe-test-cards)
+7. [Paystack Payments](#paystack-payments)
 8. [Back Office](#back-office)
 9. [Contributing](#contributing)
 10. [License](#license)
@@ -21,14 +21,15 @@ This app is built using **Next.js** for the front-end and **Supabase** for the d
 
 ## Features
 
-- **Homepage with Offers**: A dynamic homepage showcasing available offers, hotel description, and a **React Leaflet** map displaying the hotel location.
+- **Homepage with Offers**: A dynamic homepage showcasing available offers, the hotel description, and a location card with directions to The Winford Boutique Hotel Achimota in Accra.
 - **Booking Form**: Users can select a date range, and the system will display available rooms for that period.
 - **Room Sorting**: Sorting functionality based on the number of guests and price.
 - **Detailed Room Pages**: Each room has a dedicated page with a detailed description, booking form, and disabled dates for already reserved periods.
-- **Authentication**: The system supports both credential-based login and **OAuth** with Google and Facebook providers via **Auth.js**.
+- **Authentication**: Guest accounts use email and password through **Auth.js**. Hotel administrators use their configured staff credentials.
 - **Checkout Process**: Users are forwarded to a checkout page after selecting a room. If not authenticated, they are redirected to the login/signup page.
 - **Profile Management**: Users can update their profile, check their reservation history, cancel unconfirmed reservations, and delete past ones.
-- **Unconfirmed Reservations**: All bookings are marked as unconfirmed and can be confirmed upon arrival.
+- **Reservation Status**: Online reservations are confirmed after Paystack verification; walk-in reservations are recorded as confirmed by staff.
+- **Front Desk**: Allowlisted staff can record walk-in bookings, review guest enquiries, and track payment exceptions that need refund follow-up.
 - **Compound Components**: Reusable and flexible components are implemented for forms, modals, and inputs to ensure better code organization and scalability.
 
 ## Screenshots
@@ -63,7 +64,6 @@ This app is built using **Next.js** for the front-end and **Supabase** for the d
 
 - **Next.js**: Server-Side Rendering (SSR), Client-Side Rendering (CSR), and API routes.
 - **CSS**: Fully customized styling using pure CSS.
-- **React Leaflet**: For map integration.
 - **DayPicker**: For friendly date selection.
 - **date-fns**: For handling date manipulation.
 - **Zod**: For form validation.
@@ -75,7 +75,7 @@ This app is built using **Next.js** for the front-end and **Supabase** for the d
 
 - **Supabase**: Used as the database for storing and retrieving reservation and user data.
 - **bcrypt**: For secure password hashing and comparison.
-- **Auth.js**: For authentication (credentials and OAuth with Google and Facebook).
+- **Auth.js**: For credentials-based guest and administrator authentication.
 
 ## Installation
 
@@ -103,35 +103,23 @@ This app is built using **Next.js** for the front-end and **Supabase** for the d
    NEXT_PUBLIC_SUPABASE_SCHEMA_ENV=public
 
    NEXT_PUBLIC_SUPABASE_URL=YOUR-SUPABASE-URL
-   NEXT_PUBLIC_SUPABASE_KEY=YOUR-SUPABASE-PUBLIC-KEY
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR-SUPABASE-PUBLISHABLE-KEY
    NEXT_PUBLIC_SUPABASE_IMGS_URL=YOUR-SUPABASE-IMGS-BUCKET-URL
-   SUPABASE_JWT_SECRET=YOUR-SUPABASE-JWT-SECRET
-   SUPABASE_SERVICE_ROLE_KEY=YOUR-SUPABASE-SERVICE-ROLE-KEY
+   SUPABASE_SECRET_KEY=YOUR-SUPABASE-SECRET-KEY
 
    # NEXTAUTH
    NEXTAUTH_URL=http://localhost:3000/
    AUTH_SECRET=YOUR-AUTH-SECRET
 
-   # NEXTAUTH GOOGLE PROVIDER
-   AUTH_GOOGLE_ID=YOUR-GOOGLE-AUTH-ID
-   AUTH_GOOGLE_SECRET=YOUR-GOOGLE-SECRET
-
-   # NEXTAUTH FACEBOOK PROVIDER
-   AUTH_FACEBOOK_ID=YOUR-FACEBOOK-AUTH-ID
-   AUTH_FACEBOOK_SECRET=YOUR-FACEBOOK-SECRET
-
    AUTH_TRUST_HOST=http://localhost:3000
 
-   # STRIPE PAYMENT
-   STRIPE_SECRET_KEY=YOUR-STRIPE-SECRET-KEY
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=YOUR-STRIPE-PUBLISHABLE-KEY
+   # PAYSTACK PAYMENTS (GHS)
+   PAYSTACK_SECRET_KEY=YOUR-PAYSTACK-SECRET-KEY
+   PAYSTACK_WEBHOOK_SECRET=YOUR-PAYSTACK-WEBHOOK-SECRET
 
    # PRODUCTION URL
    NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-   # URL TO ALLOW CORS IN CASE YOU WANT TO ACCESS GUESTS DATA WITHIN ANOTHER APP (eg: Back Office)
-   # URL must have no trailing slash at the end of it
-   NEXT_PUBLIC_BACK_OFFICE_URL=http://localhost:5173
    ```
 
 4. Run the development server:
@@ -144,12 +132,10 @@ This app is built using **Next.js** for the front-end and **Supabase** for the d
 
 ## IMPORTANT NOTES
 
-- **Database Sessions**: Since Supabase is used as the adapter for authentication, expose the `next_auth` schema in the Supabase dashboard to ensure OAuth providers work properly.
-
-  - More details: [https://authjs.dev/getting-started/adapters/supabase](https://authjs.dev/getting-started/adapters/supabase)
+- **Authentication**: OAuth sign-in is disabled. Guest credentials are stored in the `guests` table with bcrypt password hashes. Administrators authenticate against Supabase Auth and must have the trusted `app_metadata.role` value set to `admin`.
 
 - **Image Storage (Buckets)**:  
-   This project stores images in a **Supabase storage bucket** named `rooms-imgs`. To ensure your images are accessible in the application, you must configure your **Bucket Policies** to allow public access and image manipulation.
+   This project stores room images in the Supabase Storage bucket configured by `NEXT_PUBLIC_SUPABASE_IMGS_URL` (the current project uses `images`). The bucket must allow public reads so the app and Next.js image optimizer can display them.
 
   - If the bucket is not properly configured, your application **won’t be able to retrieve images**.
 
@@ -162,59 +148,36 @@ This app is built using **Next.js** for the front-end and **Supabase** for the d
   - You can access images using the following URL structure:
 
   ```
-  https://YOUR_PROJECT_ID.storage.supabase.co/storage/v1/object/public/rooms-imgs/IMAGE_NAME
+  https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/images/IMAGE_NAME
   ```
 
   - Replace `YOUR_PROJECT_ID` with your actual Supabase project ID and `IMAGE_NAME` with the specific image filename.
 
-- **Payment Integration**: Reservations will only be created upon successful payment. A webhook at `localhost:3000/api/stripe-webhook-gateway` handles Stripe events (checkout.session.completed). Register this link in your Stripe dashboard.
-  - More details: [https://docs.stripe.com/webhooks](https://docs.stripe.com/webhooks)
-- **Guests Data**: Since this project is using a table `guests` to save users data including the password, it was necessary to create a `table view (guests_view)` in order to restrict access to all the fields and prevent exposing the password in the API response when that field is not needed. When authenticating a user, the API call reads directly from the original `guests` table to get the user password for verification and this Supabase call will need to be provided with `SUPABASE_SERVICE_ROLE_KEY` to bypass Row Level Security (RLS) since authenticating doesn't have any authenticated user to empower it with his own token itself.
+- **Admin Access**: Create staff accounts in Supabase Auth. Grant administrator access by setting `app_metadata.role` to `admin` using a trusted Supabase Admin API client or the Supabase SQL Editor; never use user-editable `user_metadata` for authorization. For example, with the Auth Admin API use `supabase.auth.admin.updateUserById(userId, { app_metadata: { role: "admin" } })`. Staff sign in through the normal sign-in page and are routed to `/admin`; after changing a role, have the staff member sign out and back in. The server uses `SUPABASE_SECRET_KEY` for privileged operations; never expose this key as a `NEXT_PUBLIC_` variable.
+
+- **Room Admin**: Run the Supabase migrations before using `/admin/rooms`. Administrators can set a GHS nightly price and a separate optional USD display price for each room type. GHS remains the booking and payment amount. Administrators can also set inventory, edit room details and features, and upload or delete room images. A room with reservations cannot be deleted.
+
+- **Reservation Security Migration**: Apply every migration in `supabase/migrations/` before deploying. In particular, apply `20261126000000_booking_and_operations_hardening.sql` to revoke direct guest reservation writes and create the staff contact and payment exception queues. The app change alone does not update permissions in an existing Supabase project.
+
+- **Guest Enquiries and Payment Exceptions**: Staff with the Supabase admin role can review contact form submissions at `/admin/inbox` and payments that could not confirm a room hold at `/admin/payment-exceptions`. Contact submissions are limited to three per email address per hour. The payment queue records staff refund follow-up but does not initiate refunds through Paystack.
+
+- **Room Image Uploads**: Each room card supports selecting up to 10 images in one upload. Admin uploads are decoded and normalized to WebP before being stored in the public image bucket; the first successfully uploaded image can be set as the room cover.
+
+- **Payment Integration**: Direct bookings are charged in Ghana cedis through Paystack. Configure `PAYSTACK_SECRET_KEY`, then register `https://YOUR_DOMAIN/api/paystack-webhook` as the Paystack webhook URL. The webhook verifies Paystack's signature and transaction details before recording a reservation. Existing Stripe reservations remain stored with their original USD currency.
+  - More details: [Paystack Transactions API](https://paystack.com/docs/api/transaction/) and [Paystack webhooks](https://paystack.com/docs/payments/webhooks/).
+- **Guests Data**: Since this project is using a table `guests` to save users data including the password, it was necessary to create a `table view (guests_view)` in order to restrict access to all the fields and prevent exposing the password in the API response when that field is not needed. When authenticating a user, the API call reads directly from the original `guests` table to get the user password for verification and this Supabase call will need to be provided with `SUPABASE_SECRET_KEY` to bypass Row Level Security (RLS) since authenticating doesn't have any authenticated user to empower it with his own token itself.
 - **View Creation**: Run the following query in your Supabase SQL Editor to create the `guests` view:
   <code>
   CREATE VIEW public.guests_view
-  // Ensure this view follows the same RLS policies as the original table using security_invoker
   WITH (security_invoker=on)
   AS
   SELECT id, email, "nationalID", nationality, "countryFlag", fullname, phone, created_at, avatar
   FROM public.guests;
   </code>
 
-## Stripe Test Cards
+## Paystack Payments
 
-When testing your Stripe integration, you can use the following test card numbers. These cards are specifically for testing purposes and won't charge real money.
-
-### Basic Test Cards
-
-| Card Number         | Card Type  | Expiration Date | CVC | Usage                              |
-| ------------------- | ---------- | --------------- | --- | ---------------------------------- |
-| 4242 4242 4242 4242 | Visa       | Any future date | Any | Successful charge                  |
-| 4000 0000 0000 0069 | Visa       | Any future date | Any | Card declined (insufficient funds) |
-| 4000 0000 0000 0341 | Visa       | Any future date | Any | Card declined (lost card)          |
-| 5105 1051 0510 5100 | MasterCard | Any future date | Any | Successful charge                  |
-| 6011 1111 1111 1117 | Discover   | Any future date | Any | Successful charge                  |
-
-### Testing Different Scenarios
-
-| Card Number         | Card Type  | Expiration Date | CVC | Usage                                  |
-| ------------------- | ---------- | --------------- | --- | -------------------------------------- |
-| 5555 5555 5555 4444 | MasterCard | Any future date | Any | Card declined (incorrect CVC)          |
-| 4222 2222 2222 2222 | Visa       | Any future date | Any | Successful charge with 3D Secure (ACS) |
-| 4000 0025 0000 3155 | Visa       | Any future date | Any | Successful charge (with 3D Secure)     |
-
-### Testing for Successful Payments (Authentication Required)
-
-| Card Number         | Card Type | Expiration Date | CVC | Usage                             |
-| ------------------- | --------- | --------------- | --- | --------------------------------- |
-| 4000 0035 0000 0020 | Visa      | Any future date | Any | Requires 3D Secure authentication |
-
-### 3D Secure Authentication Testing
-
-Use this card for testing 3D Secure scenarios.
-
-| Card Number         | Card Type | Expiration Date | CVC | Usage                            |
-| ------------------- | --------- | --------------- | --- | -------------------------------- |
-| 4000 0035 0000 0010 | Visa      | Any future date | Any | Successful charge with 3D Secure |
+Use Paystack test keys and test payment methods while developing. Set the hotel's live secret key and webhook URL only for production after a successful end-to-end test in Paystack test mode.
 
 ## Back Office
 

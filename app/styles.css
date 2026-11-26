@@ -25,6 +25,15 @@ a {
 
 /* GLOBAL STYLES */
 
+body {
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Bodoni MT", Didot, "Times New Roman", serif;
+  font-weight: 500;
+}
+
 main {
   min-height: 70vh;
 }
@@ -48,14 +57,25 @@ main {
 /* HEADER */
 
 header {
-  background-color: #fff;
+  position: relative;
+  z-index: 100;
+  background-color: #fbf8f1;
+  border-bottom: 1px solid #eae5da;
 }
 
 header .header-items {
   display: flex;
-  height: 64px;
+  height: 74px;
   justify-content: space-between;
   align-items: center;
+}
+
+header .header-items h2 {
+  color: #26352e;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -.035em;
 }
 
 
@@ -77,11 +97,13 @@ header nav ul {
 .navbar ul {
   position: absolute;
   left: 0;
-  top: 64px;
-  width: 100dvw;
+  top: 74px;
+  width: 100%;
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
   flex-direction: column;
   align-items: center;
-  background-color: #F1F1F1;
+  background-color: #fbf8f1;
   padding: 40px 20px;
   z-index: 9999;
 }
@@ -97,22 +119,37 @@ header nav ul {
 }
 
 .navbar ul a {
-  color: #161616;
-  transition: all 150ms linear;
+  color: #34443a;
+  transition: color 150ms linear;
 }
 
 .navbar ul a:hover, .navbar ul a.active {
-  color: #dc143c;
+  color: #a57343;
 }
 
 .toggle-menu-button {
-  padding: 2px 8px;
+  padding: 7px 10px;
   background-color: transparent;
-  border: 1px solid #333;
+  border: 1px solid #c8c2b6;
   outline: none;
-  color: #333;
-  font-size: 36px;
+  color: #34443a;
+  font-size: 24px;
   border-radius: 4px;
+}
+
+.toggle-menu-button:focus-visible,
+header nav a:focus-visible {
+  outline: 3px solid #a57343;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (min-width: 820px) {
@@ -174,9 +211,14 @@ div.slider div.slide.active {
 }
 
 div.slider div.slide img {
-  /* object-fit: cover; */
+  object-fit: cover;
+  object-position: center;
   width: 100%;
   aspect-ratio: 16/9;
+}
+
+div.slider--hero div.slide img {
+  object-fit: cover;
 }
 
 div.slider div.slideshow {
@@ -193,6 +235,14 @@ div.slider div.slider-overlay {
   height: 100%;
   z-index: 99;
   backdrop-filter: brightness(80%);
+}
+
+div.slider--hero div.slider-overlay {
+  backdrop-filter: none;
+}
+
+div.slider--bright div.slider-overlay {
+  backdrop-filter: none;
 }
 
 div.slider nav.slider-menu {

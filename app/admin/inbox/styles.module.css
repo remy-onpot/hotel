@@ -1,0 +1,17 @@
+.page { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 5rem; color: #26241f; }
+.page nav { margin-bottom: 2rem; color: #766d5c; }
+.page a { color: #70542b; }
+.page header { margin-bottom: 1.5rem; }
+.page header p { margin: 0; color: #8c6936; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; }
+.page h1 { margin: .3rem 0; font-size: clamp(2rem, 6vw, 3rem); }
+.list { display: grid; gap: 1rem; }
+.card { padding: 1.25rem; border: 1px solid #e6dfd1; border-radius: 12px; background: #fff; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.top h2 { margin: 0; font-size: 1.2rem; }
+.top span { text-transform: capitalize; color: #655a47; }
+.message { white-space: pre-wrap; line-height: 1.6; }
+.card small { color: #6d675c; }
+.update { display: flex; align-items: end; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
+.update label { display: grid; gap: .35rem; }
+.update select, .update button { min-height: 42px; padding: .5rem .8rem; border: 1px solid #cfc4af; border-radius: 6px; background: white; }
+.update button { color: white; background: #51412b; cursor: pointer; }

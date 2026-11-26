@@ -3,7 +3,7 @@
 import Alert from "@/app/_ui/Alert";
 import SignInButton from "../SignInButton";
 import styles from "./styles.module.css";
-import { useFormState } from "react-dom";
+import { useActionState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
@@ -15,11 +15,15 @@ const initialState = {
 };
 
 function CredentialsForm({ authAction }) {
-  const [state, formAction] = useFormState(authAction, initialState);
+  const [state, formAction] = useActionState(authAction, initialState);
   const pathname = usePathname();
 
-  const errors = Object.values(state)?.filter((item) => item.length);
-  if (errors.length) errors.forEach((item) => toast.error(item ?? "Failed to sign in, please try again"));
+  useEffect(() => {
+    const errors = Object.values(state).filter(
+      (item) => typeof item === "string" && item.length > 0
+    );
+    errors.forEach((item) => toast.error(item));
+  }, [state]);
 
   return (
     <form action={formAction} className={styles.form}>
@@ -31,25 +35,24 @@ function CredentialsForm({ authAction }) {
       )}
 
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.loginLabel}>
+        <label htmlFor="signin-email" className={styles.loginLabel}>
           Email Address
         </label>
-        <input type="email" name="email" className={styles.loginInput} />
+        <input id="signin-email" type="email" name="email" autoComplete="email" required className={styles.loginInput} />
         {/* {state.email && <span className={styles.errorMessage}>{state.email}</span>} */}
       </div>
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.loginLabel}>
+        <label htmlFor="signin-password" className={styles.loginLabel}>
           Password
         </label>
-        <input type="password" name="password" className={styles.loginInput} />
+        <input id="signin-password" type="password" name="password" autoComplete="current-password" required className={styles.loginInput} />
         {/* {state.password && <span className={styles.errorMessage}>{state.password}</span>} */}
       </div>
 
       <SignInButton />
 
-      <br />
-      <a href="#">Forget Password?</a>
-      <p>
+      <p className={styles.helpText}>Need help accessing your account? <Link href="/contact">Contact the hotel</Link></p>
+      <p className={styles.switchText}>
         Don't have an account? <Link href="/signup">Sign Up</Link>
       </p>
       <Toaster position="top-center" reverseOrder={false} />

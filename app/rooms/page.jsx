@@ -7,16 +7,17 @@ import { Suspense } from "react";
 import Loader from "../_ui/Loader";
 
 export const metadata = {
-  title: "Rooms",
-  description: "Discover and book a room at the Hotel Booking App ",
+  title: "Rooms & Suites",
+  description: "Explore rooms and suites at The Winford Boutique Hotel Achimota in Accra, Ghana.",
 };
 
-function Rooms({ searchParams }) {
-  const filter = searchParams?.sort ?? "default";
-  const range = searchParams?.range ?? "";
+async function Rooms({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  const filter = resolvedSearchParams?.sort ?? "default";
+  const range = resolvedSearchParams?.range ?? "";
   return (
     <>
-      <Banner title={"Accomodation Options"} />
+      <Banner title={"Rooms & Suites"} variant="rooms" />
 
       <div className={`container ${styles.roomsHolder}`}>
         <FilterSection filters={{ filter, range }} />

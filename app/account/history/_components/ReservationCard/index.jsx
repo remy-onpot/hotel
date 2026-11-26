@@ -9,8 +9,8 @@ import ControlButtons from "../ControlButtons";
 import { reservationCancelAction, reservationUpdateAction } from "@/app/_lib/actions";
 import { formatToAbrFormat } from "@/app/utils/datetime";
 import { differenceInDays, isFuture, isPast } from "date-fns";
-
-const SUPABASE_ROOMS_URL = process.env.NEXT_PUBLIC_SUPABASE_IMGS_URL;
+import { formatMoney } from "@/app/_lib/money";
+import { getRoomImageUrl } from "@/app/_lib/roomImage";
 
 function ReservationCard({ reservation }) {
   async function deleteReservationAction(prevState, formData) {
@@ -23,14 +23,17 @@ function ReservationCard({ reservation }) {
 
     if (!active_user) return { ...prevState, error: "unauthorized action, please authenticate and try again" };
 
-    const targeted_reservation = await getReservationByID(reservation.id);
+    const targeted_reservation = await getReservationByID(reservation.id, active_user.id);
+    if (!targeted_reservation) return { ...prevState, error: "Reservation not found." };
 
     if (targeted_reservation.status === "confirmed")
       return { ...prevState, error: "Cannot delete active reservations! You may want to cancel it instead" };
 
     if (targeted_reservation.guest_id !== active_user.id) return { ...prevState, error: "unauthorized action!" };
 
-    await deleteReservation(session.supabaseAccessToken, reservation.id);
+    const result = await deleteReservation(active_user.id, reservation.id);
+    if (result.error?.code === "NOT_DELETABLE") return { ...prevState, error: "This reservation can no longer be removed." };
+    if (result.error) return { ...prevState, error: "Could not remove this reservation. Please try again." };
     revalidatePath("/account/history");
 
     return { ...prevState, status: "success" };
@@ -38,11 +41,14 @@ function ReservationCard({ reservation }) {
 
   const arrivalDate = formatToAbrFormat(reservation.start_date);
   const departureDate = formatToAbrFormat(reservation.end_date);
+  const displayStatus = reservation.status === "conflict_refund_required"
+    ? "Refund review required"
+    : reservation.status;
 
   return (
     <article className={styles.reservationItem}>
       <div className={styles.reservationThumbnail}>
-        <Image fill src={`${SUPABASE_ROOMS_URL}/${reservation.rooms.thumbnail}`} />
+        <Image fill sizes="(max-width: 779px) 100vw, 180px" src={getRoomImageUrl(reservation.rooms.thumbnail)} alt={`${reservation.rooms.name} thumbnail`} />
       </div>
 
       <div className={styles.reservationInfos}>
@@ -65,22 +71,23 @@ function ReservationCard({ reservation }) {
           </p>
 
           <p>
-            <span className={styles.price}>${reservation.reserved_price.toFixed(2)}</span> - {reservation.guests_count}{" "}
+            <span className={styles.price}>{formatMoney(reservation.reserved_price, reservation.currency ?? "GHS")}</span> - {reservation.guests_count}{" "}
             Guest(s)
           </p>
 
           {/* CREATE A SEPARATED COMPONENT FOR THE STATUS AS BADGE */}
           <Badge
             type={
-              reservation.status == "unconfirmed"
+              reservation.status == "unconfirmed" || reservation.status === "pending" || reservation.status === "conflict_refund_required"
                 ? "warning"
                 : reservation.status == "canceled" || reservation.status == "finished"
                 ? "danger"
                 : "success"
             }
           >
-            {reservation.status}
+            {displayStatus}
           </Badge>
+          {reservation.status === "conflict_refund_required" && <p role="status">The hotel is reviewing this payment. Use the payment reference shown on the payment page when contacting the hotel.</p>}
         </div>
         <div className={styles.reservationPriceContainer}>
           {/* USE 3rd PARTY API FOR CURRENCY CONVERSION */}

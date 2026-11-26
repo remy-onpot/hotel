@@ -4,13 +4,15 @@ import Card from "@/app/_components/Card/Card";
 import Image from "next/image";
 
 import { bookingTotalPrice, nightTotalPrice } from "@/app/utils/reservationsCalcs";
-
-const SUPABASE_ROOMS_URL = process.env.NEXT_PUBLIC_SUPABASE_IMGS_URL;
+import { formatMoney } from "@/app/_lib/money";
+import { getRoomImageUrl } from "@/app/_lib/roomImage";
 
 function CheckoutOverview({ reservation, guests, start, end }) {
   const totalNights = daysDifferCount(end, start);
   const totalPerNight = nightTotalPrice(reservation.rooms.price, guests);
-  const guestsPrice = ((guests - 1) * (reservation.rooms.price / 2)).toFixed(2);
+  const guestsPrice = (guests - 1) * (reservation.rooms.price / 2);
+  const currency = reservation.currency ?? "GHS";
+  const formatPrice = (amount) => formatMoney(amount, currency);
   const totalPrice = bookingTotalPrice(reservation.rooms.price, guests, totalNights);
   // return <h1>OVERVIEW CARD</h1>;
   return (
@@ -19,7 +21,8 @@ function CheckoutOverview({ reservation, guests, start, end }) {
         <Card.Thumbnail>
           <Image
             fill
-            src={`${SUPABASE_ROOMS_URL}/${reservation.rooms.thumbnail}`}
+            sizes="(max-width: 700px) 100vw, 40vw"
+            src={getRoomImageUrl(reservation.rooms.thumbnail)}
             alt={`${reservation.rooms.name} thumbnail`}
           />
         </Card.Thumbnail>
@@ -45,24 +48,24 @@ function CheckoutOverview({ reservation, guests, start, end }) {
           <div className={styles.bookingSummary}>
             <h3>Pricing Breakdown</h3>
             <p>
-              <span>${reservation.rooms.price.toFixed(2)} x night (Base Rate for 1 Guest)</span>
-              <span>${reservation.rooms.price.toFixed(2)}</span>
+              <span>{formatPrice(reservation.rooms.price)} x night (Base Rate for 1 Guest)</span>
+              <span>{formatPrice(reservation.rooms.price)}</span>
             </p>
             <p>
               <span>
-                Additional Guests ({guests - 1} x ${Number(reservation.rooms.price / 2).toFixed(2)}per night)
+                Additional Guests ({guests - 1} x {formatPrice(reservation.rooms.price / 2)} per night)
               </span>
-              <span>${guestsPrice}</span>
+              <span>{formatPrice(guestsPrice)}</span>
             </p>
             <p>
               <span>Total per Night: </span>
-              <span>${totalPerNight}</span>
+              <span>{formatPrice(totalPerNight)}</span>
             </p>
           </div>
 
           <div className={styles.totalPrice}>
             <span>Total Without Taxes ({totalNights} Nights)</span>
-            <span>${totalPrice}</span>
+            <span>{formatPrice(totalPrice)}</span>
           </div>
         </Card.Description>
       </Card>

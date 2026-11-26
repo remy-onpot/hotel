@@ -8,7 +8,7 @@ import { useState } from "react";
 import { addDays, formatISO, isBefore, isValid } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
 
-function BookingForm({ bookingSearchAction, children }) {
+function BookingForm({ bookingSearchAction, children, idPrefix = "home" }) {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date(addDays(new Date(), 1)));
 
@@ -37,9 +37,9 @@ function BookingForm({ bookingSearchAction, children }) {
 
   return (
     <form action={handleSearch} className={styles.bookingForm}>
-      <h1 className={styles.formHeading}>BOOK A ROOM ONLINE</h1>
+      <h2 className={styles.formHeading}>Plan your stay in Accra</h2>
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.formLabel}>
+        <label htmlFor={`${idPrefix}-arrival`} className={styles.formLabel}>
           Arrival
         </label>
         <DatePicker
@@ -49,12 +49,14 @@ function BookingForm({ bookingSearchAction, children }) {
           startDate={startDate}
           endDate={endDate}
           className={styles.input}
+          id={`${idPrefix}-arrival`}
+          aria-label="Arrival date"
           dateFormat={"dd/MM/yyyy"}
           excludeDateIntervals={[{ start: new Date("01/01/1970"), end: new Date() }]}
         />
       </div>
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.formLabel}>
+        <label htmlFor={`${idPrefix}-departure`} className={styles.formLabel}>
           Departure
         </label>
         <DatePicker
@@ -65,6 +67,8 @@ function BookingForm({ bookingSearchAction, children }) {
           endDate={endDate}
           minDate={startDate}
           className={styles.input}
+          id={`${idPrefix}-departure`}
+          aria-label="Departure date"
           dateFormat={"dd/MM/yyyy"}
           excludeDateIntervals={[{ start: new Date("01/01/1970"), end: new Date() }]}
         />

@@ -3,7 +3,7 @@
 import Alert from "@/app/_ui/Alert";
 import SignUpButton from "../SignUpButton";
 import styles from "./styles.module.css";
-import { useFormState } from "react-dom";
+import { useActionState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
@@ -17,12 +17,16 @@ const initialState = {
 };
 
 function CredentialsForm({ registerAction, authAction }) {
-  const [state, formAction] = useFormState(registerAction, initialState);
+  const [state, formAction] = useActionState(registerAction, initialState);
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const errors = Object.values(state)?.filter((item) => item.length);
-  if (errors.length) errors.forEach((item) => toast.error(item ?? "Failed to sign in, please try again"));
+  useEffect(() => {
+    const errors = Object.values(state).filter(
+      (item) => typeof item === "string" && item.length > 0
+    );
+    errors.forEach((item) => toast.error(item));
+  }, [state]);
 
   return (
     <form action={formAction} className={styles.form}>
@@ -31,26 +35,26 @@ function CredentialsForm({ registerAction, authAction }) {
       {state.critical && <Alert>{state.critical}</Alert>}
 
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.loginLabel}>
+        <label htmlFor="signup-fullname" className={styles.loginLabel}>
           Fullname
         </label>
-        <input type="text" name="fullname" className={styles.loginInput} />
+        <input id="signup-fullname" type="text" name="fullname" autoComplete="name" required className={styles.loginInput} />
         {state.fullname && <span className={styles.errorMessage}>{state.fullname}</span>}
       </div>
 
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.loginLabel}>
+        <label htmlFor="signup-email" className={styles.loginLabel}>
           Email Address
         </label>
-        <input type="email" name="email" className={styles.loginInput} />
+        <input id="signup-email" type="email" name="email" autoComplete="email" required className={styles.loginInput} />
         {state.email && <span className={styles.errorMessage}>{state.email}</span>}
       </div>
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.loginLabel}>
+        <label htmlFor="signup-password" className={styles.loginLabel}>
           Password
         </label>
         <div className={styles.passwordContainer}>
-          <input type={showPassword ? "text" : "password"} name="password" className={styles.loginInput} />
+          <input id="signup-password" type={showPassword ? "text" : "password"} name="password" autoComplete="new-password" required className={styles.loginInput} />
           <button type="button" className={styles.pwdToggler} onClick={() => setShowPassword((current) => !current)}>
             <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
           </button>
@@ -59,11 +63,11 @@ function CredentialsForm({ registerAction, authAction }) {
       </div>
 
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.loginLabel}>
+        <label htmlFor="signup-confirm-password" className={styles.loginLabel}>
           Confirm Password
         </label>
         <div className={styles.passwordContainer}>
-          <input type={showPassword ? "text" : "password"} name="confirm_password" className={styles.loginInput} />
+          <input id="signup-confirm-password" type={showPassword ? "text" : "password"} name="confirm_password" autoComplete="new-password" required className={styles.loginInput} />
           <button type="button" className={styles.pwdToggler} onClick={() => setShowPassword((current) => !current)}>
             <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
           </button>
@@ -75,7 +79,7 @@ function CredentialsForm({ registerAction, authAction }) {
 
       <br />
 
-      <p>
+      <p className={styles.switchText}>
         Already have an account? <Link href="/signin">Sign In</Link>
       </p>
       <Toaster position="top-center" reverseOrder={false} />

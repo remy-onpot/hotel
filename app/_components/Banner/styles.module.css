@@ -32,3 +32,19 @@
   background-color: #dc143c;
 
 }
+
+.roomsBanner {
+  height: clamp(300px, 38vw, 500px);
+  background-image: linear-gradient(90deg, rgb(25 22 18 / 48%), rgb(25 22 18 / 28%)), url('/samples/924012048595956516.jpg');
+  background-position: center 58%;
+}
+
+.roomsBanner .overlay {
+  backdrop-filter: none;
+}
+
+.roomsBanner .bannerHeading {
+  font-size: clamp(2.75rem, 6vw, 5rem);
+  letter-spacing: .01em;
+  text-transform: none;
+}

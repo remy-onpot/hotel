@@ -4,8 +4,8 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Reservation Checkout",
-  description: "Checkout your reservation and let yourself have a good stay with us",
+  title: "Complete your booking",
+  description: "Review your reservation details and complete your Winford Boutique Hotel Achimota booking.",
 };
 
 async function Page() {
@@ -15,7 +15,7 @@ async function Page() {
 
   return (
     <>
-      <Banner title={"BOOKING CONFIRMATION"} />
+      <Banner title={"Complete your booking"} />
       <CheckoutForm />
     </>
   );

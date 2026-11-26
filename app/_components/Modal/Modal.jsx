@@ -19,24 +19,16 @@ function Overlay({ hideOnLargerScreens = true, children }) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (typeof w !== "undefined") {
-      setIsMounted(true);
-    }
+    setIsMounted(true);
   }, []);
 
-  if (!isMounted)
-    return (
-      <>
-        {isOpen
-          ? createPortal(
-              <div className={`${styles.modalOverlay} ${hideOnLargerScreens ? styles.hideOnLargerScreens : ""}`}>
-                {children}
-              </div>,
-              typeof window !== "undefined" ? document.body : null
-            )
-          : null}
-      </>
-    );
+  if (!isMounted || !isOpen) return null;
+  return createPortal(
+    <div className={`${styles.modalOverlay} ${hideOnLargerScreens ? styles.hideOnLargerScreens : ""}`}>
+      {children}
+    </div>,
+    document.body
+  );
 }
 
 function Heading({ children }) {

@@ -82,6 +82,11 @@
   background-color: #dc143c;
 }
 
+.sidebarLink:focus-visible, .sidebarButton:focus-visible {
+  outline: 3px solid #dc143c;
+  outline-offset: 2px;
+}
+
 @media (min-width: 780px) {
   .sidebarLink, .sidebarButton {
     gap: 12px;
@@ -91,13 +96,7 @@
 }
 
 .sidebarLink span:last-child, .sidebarButton span:last-child {
-  display: none;
-}
-
-@media (min-width: 714px) {
-  .sidebarLink span:last-child, .sidebarButton span:last-child {
-    display: inline;
-  }
+  display: inline;
 }
 
 

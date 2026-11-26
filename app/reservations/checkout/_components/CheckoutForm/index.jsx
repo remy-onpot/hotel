@@ -3,7 +3,7 @@
 import Alert from "@/app/_ui/Alert";
 import ConfirmationButton from "../ConfirmationButton";
 import styles from "./styles.module.css";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 
 import CancelButton from "../CancelButton";
 import { useTransition } from "react";
@@ -19,7 +19,7 @@ const initialState = {
 };
 
 function CheckoutForm({ guest, createReservationAction, bookingCancelAction, children }) {
-  const [state, formAction] = useFormState(createReservationAction, initialState);
+  const [state, formAction] = useActionState(createReservationAction, initialState);
 
   const [isPending, setTransition] = useTransition();
 
@@ -28,7 +28,6 @@ function CheckoutForm({ guest, createReservationAction, bookingCancelAction, chi
   }
 
   const errors = Object.values(state)?.filter((item) => item.length);
-  console.log(errors);
   if (errors.length) errors.forEach((item) => toast.error(item ?? "Failed to confirm you booking, please try again"));
 
   return (

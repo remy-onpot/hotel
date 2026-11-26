@@ -1,0 +1,445 @@
+.page {
+  width: min(1100px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 72px 0 96px;
+  color: #26312e;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.header h1,
+.roomCard h2 {
+  margin: 0;
+  color: #183b35;
+}
+
+.header h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+}
+
+.header p:last-child {
+  color: #5f6e69;
+}
+
+.eyebrow,
+.roomId {
+  color: #74837d;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.imageUploadControls {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.wideField {
+  grid-column: 1 / -1;
+}
+
+.amenityFieldset {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #dfe5df;
+  border-radius: 10px;
+  background: #fafbf9;
+}
+
+.amenityFieldset legend {
+  padding: 0 7px;
+  color: #244b3d;
+  font-weight: 700;
+}
+
+.amenityGroups { display: grid; gap: 15px; margin-top: 12px; }
+.amenityGroup { padding: 13px; border: 1px solid #e6e9e3; border-radius: 8px; background: #fff; }
+.amenityGroup h3 { margin: 0 0 10px; color: #987447; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; }
+.amenityOptions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.amenityOption { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid #edf0eb; border-radius: 6px; color: #526159; font-size: .8rem; line-height: 1.35; cursor: pointer; }
+.amenityOption:has(input:checked) { border-color: #bdcfc3; background: #f1f6f1; color: #254c3d; }
+.amenityOption input[type="checkbox"] { flex: 0 0 14px; width: 14px; height: 14px; min-height: 14px; margin: 0; padding: 0; border: 1px solid #aebdb3; border-radius: 3px; accent-color: #245443; }
+.amenityOption svg { flex: 0 0 14px; color: #a47d49; }
+.customAmenities { display: grid; gap: 7px; margin-top: 14px; }
+
+@media (max-width: 600px) { .amenityOptions { grid-template-columns: 1fr; } }
+
+.toolbar button,
+.dangerButton,
+.imageDeleteButton,
+.dialogActions button {
+  justify-self: start;
+  min-height: 46px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 8px;
+  background: #183b35;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toolbar button:disabled,
+.dangerButton:disabled,
+.imageDeleteButton:disabled,
+.dialogActions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.roomCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.roomCardHeader h2 {
+  margin: 0;
+  color: #183b35;
+}
+
+.roomActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.editButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid #c8a16d;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #214b41, #15372f);
+  box-shadow: 0 5px 14px rgb(24 59 53 / 18%);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.editButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #2a5a4e, #1a4138);
+  box-shadow: 0 8px 18px rgb(24 59 53 / 24%);
+}
+
+.editButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.editButton:focus-visible {
+  outline: 3px solid #d9b982;
+  outline-offset: 3px;
+}
+
+.roomPrice {
+  margin: -8px 0 20px;
+  color: #4d5e57;
+  font-weight: 600;
+}
+
+.inventory {
+  margin: -12px 0 18px;
+  color: #4d5e57;
+}
+
+.featureTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -8px 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.featureTag {
+  padding: 6px 10px;
+  border: 1px solid #dce5e1;
+  border-radius: 999px;
+  background: #f7faf8;
+  color: #43564e;
+  font-size: 0.86rem;
+}
+
+.qrDownload {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: 1px solid #dce5e1;
+  border-radius: 9px;
+  background: #f7faf8;
+  color: #43564e;
+  font-size: 0.86rem;
+}
+
+.hiddenQr { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.qrDownloadButton {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #b6c6bd;
+  border-radius: 6px;
+  background: #fff;
+  color: #254d3e;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.qrDownloadButton:hover { border-color: #254d3e; background: #eef4ef; }
+
+.dangerButton,
+.imageDeleteButton {
+  background: #8f2929;
+}
+
+.dialogOverlay {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: rgb(16 28 24 / 62%);
+}
+
+.dialog {
+  width: min(560px, 100%);
+  max-height: min(90vh, 900px);
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 28%);
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dialogHeader h2 {
+  margin: 0;
+  color: #183b35;
+}
+
+.dialogClose {
+  width: 40px;
+  min-height: 40px !important;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 50% !important;
+  background: #edf2ef !important;
+  color: #26312e !important;
+  font-size: 1.6rem !important;
+  line-height: 1;
+}
+
+.dialogForm {
+  display: grid;
+  gap: 16px;
+}
+
+.dialogForm label {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.dialogForm input:not([type="checkbox"]),
+.dialogForm textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #cbd7d2;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.dialogForm textarea {
+  resize: vertical;
+}
+
+.dialogForm > p,
+.dialogBody p {
+  margin: 0;
+  color: #52635c;
+  line-height: 1.55;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.dialogActions .secondaryButton {
+  background: #e9efec;
+  color: #26312e;
+}
+
+.dialogActions .dangerButton {
+  background: #8f2929;
+}
+
+.dialogBody {
+  display: grid;
+  gap: 20px;
+}
+
+.dialog .error,
+.dialog .success {
+  margin-top: 16px;
+}
+
+.imageDeleteButton {
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+
+.helpText {
+  color: #64736e;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.thumbnailOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #4d5e57;
+  font-size: .9rem;
+}
+
+.uploadButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 16px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #183b35;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.uploadButton:focus-within {
+  outline: 3px solid #d9b982;
+  outline-offset: 3px;
+}
+
+.uploadDisabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.multiFileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.multiFileInput:disabled {
+  cursor: wait;
+}
+
+.error,
+.success,
+.notice {
+  align-self: center;
+  margin: 0;
+}
+
+.error { color: #a12d2d; }
+.success { color: #226947; }
+.notice { color: #8a5116; }
+
+.roomGrid {
+  display: grid;
+  gap: 24px;
+}
+
+.roomCard {
+  padding: 22px;
+  border: 1px solid #e0e7e4;
+  border-radius: 16px;
+}
+
+.roomId {
+  margin: 6px 0 18px;
+  letter-spacing: 0.02em;
+}
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
+}
+
+.imageGrid figure {
+  min-width: 0;
+  margin: 0;
+}
+
+.imageFrame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  background: #e9efec;
+}
+
+.imageFrame img {
+  object-fit: cover;
+}
+
+.imageGrid figcaption {
+  padding-top: 7px;
+  color: #64736e;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 650px) {
+  .roomCardHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+}

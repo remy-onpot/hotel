@@ -1,10 +1,26 @@
 
+.datePickerSection { min-width: 0; }
+
+.calendarToggle { display: none; }
+
+.calendarPanel {
+  max-height: none;
+  overflow: visible;
+  transition: max-height 220ms ease;
+}
+
 .datepicker {
-  padding: 20px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
+  overflow-x: auto;
 }
+
+.datepicker > div { width: 100%; max-width: 100%; overflow-x: auto; }
 
 .datepickerToday {
   color: rgb(190, 13, 48);
@@ -56,11 +72,59 @@
   margin-top: 8px;
   padding: 12px 0px;
   text-align: center;
-  background-color: #181b20;
-  color: #fff;
+  background-color: #f4efe8;
+  color: #5d5142;
 }
 
 .footerIcon {
   margin-right: 6px;
+}
+
+@media (max-width: 719px) {
+  .calendarToggle {
+    display: flex;
+    width: 100%;
+    min-height: 62px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 18px;
+    border: 0;
+    border-bottom: 1px solid #eee8df;
+    background: #fffdfb;
+    color: #38342f;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .calendarToggle > span:first-child {
+    display: grid;
+    gap: 4px;
+  }
+
+  .calendarToggle strong {
+    color: #735634;
+    font-size: 13px;
+  }
+
+  .calendarToggle > span:first-child > span {
+    color: #77736d;
+    font-size: 12px;
+  }
+
+  .toggleIcon {
+    color: #8b6840;
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .calendarPanel {
+    max-height: 0;
+    overflow: hidden;
+  }
+
+  .calendarPanel.calendarOpen {
+    max-height: 520px;
+  }
 }
 

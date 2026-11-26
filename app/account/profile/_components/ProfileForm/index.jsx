@@ -2,10 +2,9 @@
 
 import SubmitButton from "@/app/_ui/SubmitButton";
 import styles from "./styles.module.css";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 
 import SelectCountry from "@/app/_ui/SelectCountry";
-import toast, { Toaster } from "react-hot-toast";
 
 // import "react-toastify/dist/ReactToastify.css";
 
@@ -17,13 +16,8 @@ const initialState = {
 };
 
 function ProfileForm({ guestUpdateAction, guest }) {
-  const [state, formAction] = useFormState(guestUpdateAction, initialState);
+  const [state, formAction] = useActionState(guestUpdateAction, initialState);
 
-  const errors = Object.values(state ?? {})?.filter((item) => item.length);
-  if (errors.length)
-    errors.forEach((item) =>
-      toast.error(item ?? "Failed to update your profile, please try again")
-    );
 
   return (
     <form action={formAction}>
@@ -49,6 +43,7 @@ function ProfileForm({ guestUpdateAction, guest }) {
             type="email"
             placeholder="john.doe@mail.com"
             name="email"
+            readOnly
           />
           {state?.email && (
             <span className={styles.errorMessage}>{state.email}</span>
@@ -121,7 +116,8 @@ function ProfileForm({ guestUpdateAction, guest }) {
           content={{ pending: "Saving...", base: "Save" }}
         />
       </div>
-      <Toaster position="top-center" reverseOrder={false} />
+      {state?.success && <p role="status">{state.success}</p>}
+      {state?.error && <p role="alert">{state.error}</p>}
     </form>
   );
 }

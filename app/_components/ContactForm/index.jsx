@@ -1,5 +1,5 @@
 "use client";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import styles from "./styles.module.css";
 import { useRef } from "react";
 import toast, { Toaster } from "react-hot-toast";
@@ -7,7 +7,7 @@ import SubmitButton from "@/app/_ui/SubmitButton";
 import Alert from "@/app/_ui/Alert";
 
 function ContactForm({ contactAction }) {
-  const [state, formAction] = useFormState(contactAction, { errors: {} });
+  const [state, formAction] = useActionState(contactAction, { errors: {} });
   const resetBtnRef = useRef(null);
   const formRef = useRef(null);
 
@@ -22,24 +22,25 @@ function ContactForm({ contactAction }) {
   }
   return (
     <form ref={formRef} action={formAction} className={styles.contactForm}>
+      <input name="website" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" hidden />
       {state.errors?.critical && (
         <Alert type="danger">{state.errors?.critical}</Alert>
       )}
 
       <div>
-        <input name="fullname" type="text" placeholder="Name" />
+        <input name="fullname" type="text" placeholder="Name" aria-label="Name" autoComplete="name" />
         {state.errors?.fullname && (
           <span className={styles.errorMessage}>{state.errors.fullname}</span>
         )}
       </div>
       <div>
-        <input name="email" type="email" placeholder="Email" />
+        <input name="email" type="email" placeholder="Email" aria-label="Email" autoComplete="email" />
         {state.errors?.email && (
           <span className={styles.errorMessage}>{state.errors.email}</span>
         )}
       </div>
       <div>
-        <input name="phone" type="tel" placeholder="Phone" />
+        <input name="phone" type="tel" placeholder="Phone" aria-label="Phone" autoComplete="tel" />
         {state.errors?.phone && (
           <span className={styles.errorMessage}>{state.errors.phone}</span>
         )}

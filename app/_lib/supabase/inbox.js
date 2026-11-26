@@ -1,19 +1,11 @@
-import { riskySupabaseClient } from "./supabaseRiskyClient";
+import { privilegedInsertInbox } from "./supabaseRiskyClient";
 
 export async function createMessage({ fullname, email, phone, message }) {
-  let { data: inbox, error } = await riskySupabaseClient
-    .from("inbox")
-    .insert({ fullname, email, phone, message })
-    .select("*")
-    .order("created_at", { ascending: false })
-    .single();
-
-  if (error) {
-    console.log({ messageError: error.message });
-    throw new Error(error.message);
+  const { data, error } = await privilegedInsertInbox({ fullname, email, phone, message });
+  if (error) throw new Error("Could not save the message.");
+  if (!data?.ok) {
+    if (data?.code === "RATE_LIMITED") throw new Error("Please wait before sending another enquiry from this email address.");
+    throw new Error("Please check your contact details and try again.");
   }
-
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  return inbox;
+  return data;
 }

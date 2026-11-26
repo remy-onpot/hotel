@@ -1,5 +1,6 @@
 import Link from "next/link";
 import styles from "./styles.module.css";
+import { brand } from "@/app/_lib/brand";
 
 function Footer() {
   return (
@@ -8,15 +9,14 @@ function Footer() {
         <div>
           <h3>Contact Us</h3>
           <ul>
-            <li>email@gmail.com</li>
-            <li>+212 6 77 88 99 00</li>
-            <li>XYZ Street Agadir</li>
+            <li><Link href="/contact">Contact the hotel</Link></li>
+            <li>{brand.location}</li>
             <li className={styles.icons}></li>
           </ul>
         </div>
 
         <div>
-          <h3>Link Menu</h3>
+          <h3>Explore</h3>
           <ul>
             <li>
               <Link href="/">Homepage</Link>
@@ -37,11 +37,12 @@ function Footer() {
         </div>
 
         <div>
-          <h3>Subscribe To Our Newsletter</h3>
-          <li className={styles.newsletter}>
-            <input type="text" placeholder="example@mail.com" />
-            <button>SUBMIT</button>
-          </li>
+          <h3>Plan your arrival</h3>
+          <ul>
+            <li>Check-in: {brand.checkIn}</li>
+            <li>Check-out: {brand.checkOut}</li>
+            <li>{brand.address}</li>
+          </ul>
         </div>
       </nav>
     </footer>

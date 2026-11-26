@@ -4,7 +4,7 @@ import styles from "./styles.module.css";
 
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -13,7 +13,7 @@ const initialState = {
 };
 
 function DeleteForm({ deleteAction, showLabel = false }) {
-  const [state, formAction] = useFormState(deleteAction, initialState);
+  const [state, formAction] = useActionState(deleteAction, initialState);
 
   if (state?.error) {
     toast.error(state.error);

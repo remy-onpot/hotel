@@ -21,7 +21,7 @@ const options = [
 ];
 
 function FilterSection({ filters }) {
-  const range = { from: filters?.range.split("_")?.at(0), to: filters?.range.split("_")?.at(1) };
+  const range = { from: filters?.range?.split("_")?.at(0), to: filters?.range?.split("_")?.at(1) };
   const [startDate, setStartDate] = useState(
     filters?.range && isValid(new Date(range.from)) ? formatRFC7231(new Date(range.from)) : ""
   );
@@ -34,7 +34,7 @@ function FilterSection({ filters }) {
   const { replace } = useRouter();
 
   function handleSort(e) {
-    console.log(e);
+    if (!e) return;
     const params = new URLSearchParams(searchParams);
     params.set("sort", e.value);
     replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -42,16 +42,17 @@ function FilterSection({ filters }) {
 
   function handleStartSelection(date) {
     setStartDate(date);
-    console.log(date);
   }
 
   function handleEndSelection(date) {
     setEndDate(date);
-    console.log(date);
   }
 
   function handleSearch() {
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate) {
+      toast.error("Select arrival and departure dates to search.");
+      return;
+    }
     const arrival = formatISO(new Date(startDate), { representation: "date" });
     const departure = formatISO(new Date(endDate), { representation: "date" });
 
@@ -69,7 +70,7 @@ function FilterSection({ filters }) {
   return (
     <form className={`${styles.filterSection} roomsForm`}>
       <div className={styles.formControl}>
-        <label htmlFor="">Sort Rooms</label>
+        <label id="sort-rooms-label">Sort Rooms</label>
         <Select
           onChange={(e) => {
             handleSort(e);
@@ -77,13 +78,15 @@ function FilterSection({ filters }) {
           options={options}
           isSearchable={false}
           className={styles.select}
+          classNamePrefix="select"
+          aria-labelledby="sort-rooms-label"
           defaultValue={options.find((item) => item.value === filters?.filter) ?? options.at(0)}
         />
       </div>
 
       <div className={styles.formControl}>
         <label>Filter By Date</label>
-        <div className={styles.datesContainer}>
+        <div className={styles.datesContainer} role="group" aria-label="Filter rooms by stay dates">
           <DatePicker
             selected={startDate}
             onChange={(date) => handleStartSelection(date)}
@@ -91,6 +94,8 @@ function FilterSection({ filters }) {
             startDate={startDate}
             endDate={endDate}
             className={styles.input}
+            id="rooms-arrival"
+            aria-label="Arrival date"
             dateFormat={"dd/MM/yyyy"}
             excludeDateIntervals={[{ start: new Date("01/01/1970"), end: new Date() }]}
             placeholderText="Arrival Date"
@@ -104,6 +109,8 @@ function FilterSection({ filters }) {
             endDate={endDate}
             minDate={startDate}
             className={styles.input}
+            id="rooms-departure"
+            aria-label="Departure date"
             dateFormat={"dd/MM/yyyy"}
             excludeDateIntervals={[{ start: new Date("01/01/1970"), end: new Date() }]}
             placeholderText="Departure Date"

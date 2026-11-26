@@ -1,5 +1,7 @@
 
 .sliderContainer {
   position: relative;
-  margin-top: 32px;
+  margin-top: 0;
+  overflow: hidden;
+  border-radius: 8px;
 }

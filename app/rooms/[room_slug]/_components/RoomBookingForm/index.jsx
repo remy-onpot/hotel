@@ -5,10 +5,11 @@ import { faBed, faCalendar, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { formatISO } from "date-fns";
 import FormDayPicker from "../FormDayPicker";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import ReservationButton from "../ReservationButton";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import CustomSelect from "@/app/_ui/CustomSelect";
 
 const initialState = {
   dateError: "",
@@ -17,27 +18,58 @@ const initialState = {
   isBooking: false,
 };
 
-function RoomBookingForm({ bookingAction, room }) {
-  const [state, formAction] = useFormState(bookingAction, initialState);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+function RoomBookingForm({ bookingAction, availabilityAction, room, initialRange, initialAvailability, initialAvailabilityError }) {
+  const [state, formAction] = useActionState(bookingAction, initialState);
+  const [startDate, setStartDate] = useState(initialRange?.start ?? "");
+  const [endDate, setEndDate] = useState(initialRange?.end ?? "");
+  const [availability, setAvailability] = useState(initialRange ? initialAvailability : null);
+  const [availabilityError, setAvailabilityError] = useState(initialAvailabilityError ? "Could not check availability. Please try again." : "");
+  const [, startAvailabilityTransition] = useTransition();
 
   const [guests, setGuests] = useState("");
 
   const handleDateSelection = useCallback((range) => {
-    if (!range) return;
-    const from = formatISO(range?.from, { representation: "date" });
-    const to = formatISO(range?.to, { representation: "date" });
-
-    console.log({ from, to });
-
+    if (!range?.from) return;
+    const from = formatISO(range.from, { representation: "date" });
+    const to = range.to ? formatISO(range.to, { representation: "date" }) : "";
     setStartDate(from);
     setEndDate(to);
   }, []);
 
+  useEffect(() => {
+    if (!startDate || !endDate) {
+      setAvailability(null);
+      setAvailabilityError("");
+      return;
+    }
+    let active = true;
+    setAvailability(null);
+    setAvailabilityError("");
+    startAvailabilityTransition(async () => {
+      try {
+        const result = await availabilityAction(startDate, endDate);
+        if (!active) return;
+        setAvailability(result.data);
+        setAvailabilityError(result.error ?? "");
+      } catch {
+        if (active) setAvailabilityError("Could not check availability. Please try again.");
+      }
+    });
+    return () => { active = false; };
+  }, [startDate, endDate, availabilityAction, startAvailabilityTransition]);
+
   function handleSubmit() {
     if (!(startDate && endDate)) {
       toast.error("Please select a date range from the calendar");
+      return;
+    }
+
+    if (availability === false) {
+      toast.error("Those dates are already taken. Choose another date range.");
+      return;
+    }
+    if (availability !== true || availabilityError) {
+      toast.error(availabilityError || "Checking availability. Please try again in a moment.");
       return;
     }
 
@@ -55,8 +87,11 @@ function RoomBookingForm({ bookingAction, room }) {
   }
 
   return (
-    <form action={handleSubmit} className={styles.roomBookingForm}>
-      <FormDayPicker endDate={endDate} handleDateSelection={handleDateSelection} />
+    <form id="room-booking" action={handleSubmit} className={styles.roomBookingForm}>
+      <FormDayPicker start={startDate ? new Date(`${startDate}T00:00:00`) : undefined} end={endDate ? new Date(`${endDate}T00:00:00`) : undefined} handleDateSelection={handleDateSelection} />
+      {availability === false && <p className={styles.availabilityError} role="alert">Those dates are taken for this room. Select another date range to continue.</p>}
+      {availabilityError && <p className={styles.availabilityError} role="alert">{availabilityError}</p>}
+      {state?.dateError && <p className={styles.availabilityError} role="alert">{state.dateError}</p>}
 
       <div className={styles.formItem}>
         <div className={styles.formInput}>
@@ -91,22 +126,21 @@ function RoomBookingForm({ bookingAction, room }) {
             <FontAwesomeIcon icon={faUsers} />
           </div>
           <div className={styles.formControl}>
-            <label>Guests</label>
-            <select name="" id="" onChange={(e) => setGuests(e.target.value)}>
-              <option value="">Select guests number</option>
-              {Array.from(Array(room?.capacity ?? 0)).map((item, index) => (
-                <option key={index} value={index + 1}>
-                  {index + 1}
-                </option>
-              ))}
-            </select>
+            <label id="booking-guests-label">Guests</label>
+            <CustomSelect
+              options={Array.from({ length: room?.capacity ?? 0 }, (_, index) => ({ value: String(index + 1), label: String(index + 1) }))}
+              value={guests ? { value: guests, label: guests } : null}
+              onChange={(option) => setGuests(option?.value ?? "")}
+              ariaLabelledBy="booking-guests-label"
+              placeholder="Select guests number"
+            />
           </div>
         </div>
 
         {/* <button type="submit" className={styles.formButton} disabled={state.isBooking}>
           {state.isBooking ? "Booking..." : "Book Now"}
         </button> */}
-        <ReservationButton />
+        <ReservationButton disabled={!startDate || !endDate || !guests || availability !== true || Boolean(availabilityError)} />
       </div>
       <Toaster position="top-center" reverseOrder={false} />
     </form>

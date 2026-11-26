@@ -6,19 +6,16 @@ import { format } from "date-fns";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
+import { formatMoney } from "@/app/_lib/money";
+import { getRoomImageUrl } from "@/app/_lib/roomImage";
 
-const SUPABASE_ROOMS_URL = process.env.NEXT_PUBLIC_SUPABASE_IMGS_URL;
-
-async function SuccessPage({ reservation }) {
-  if (reservation.status?.toLowerCase() === "confirmed")
-    try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/clear-pending-reservation`,
-        { method: "POST" }
-      );
-    } catch (err) {
-      console.log({ err });
-    }
+function SuccessPage({ reservation }) {
+  useEffect(() => {
+    if (reservation.status?.toLowerCase() !== "confirmed") return;
+    fetch("/api/clear-pending-reservation", { method: "POST" }).catch((error) => {
+      console.error("Could not clear pending reservation:", error);
+    });
+  }, [reservation.status]);
   return (
     <>
       <Banner title={"CHECKOUT OVERVIEW"} />
@@ -49,12 +46,12 @@ async function SuccessPage({ reservation }) {
             </div>
             <div className={`${styles["detail-group"]}`}>
               <label>Total Amount</label>
-              <span>${(reservation.reserved_price * 1).toFixed(2)}</span>
+              <span>{formatMoney(reservation.reserved_price, reservation.currency ?? "GHS")}</span>
             </div>
           </div>
           <div className={`${styles["room-preview"]}`}>
             <Image
-              src={`${SUPABASE_ROOMS_URL}/${reservation.rooms.thumbnail}`}
+              src={getRoomImageUrl(reservation.rooms.thumbnail)}
               alt="Room Preview"
               width={800}
               height={264}

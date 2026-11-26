@@ -10,18 +10,18 @@ export const metadata = {
 };
 
 async function Page({ params }) {
-  const reservation_id = params?.id;
+  const { id: reservation_id } = await params;
 
-  const reservation = await getReservationByID(reservation_id);
+  const session = await auth();
+  if (!session?.user) notFound();
+  const reservation = await getReservationByID(reservation_id, session.user.id);
   if (!reservation) notFound();
 
   const isUpdateAllowed = reservation.status === "confirmed" || reservation.status === "unconfirmed";
 
   if (!isUpdateAllowed) return <h4>Sorry, but reservation cannot be edited.</h4>;
 
-  const session = await auth();
-
-  if (session?.user.id !== reservation.guest_id)
+  if (String(session.user.id) !== String(reservation.guest_id))
     return (
       <div className="container">
         <h2>Unauthorized action!</h2>

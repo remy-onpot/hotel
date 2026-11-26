@@ -11,37 +11,39 @@ function BookingPolicy() {
       <hr className="decriptionDivider" />
 
       <div className={styles.accordion}>
-        <Accordion className={styles.accordionItem} label={"Lorem ipsum dolor sit amet, consectetur adipiscing elit."}>
+        <Accordion className={styles.accordionItem} label={"What are check-in and check-out times?"}>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing
-            elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur
-            adipiscing elit.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing
-            elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Check-in starts at 2:00 PM and check-out is by 12:00 PM. Please
+            contact the hotel ahead of time if you expect to arrive late or need
+            to ask about an early arrival.
           </p>
         </Accordion>
-        <Accordion className={styles.accordionItem} label={"Lorem ipsum dolor sit amet, consectetur adipiscing elit."}>
+        <Accordion className={styles.accordionItem} label={"Is breakfast available?"}>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing
-            elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur
-            adipiscing elit.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing
-            elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Continental breakfast is listed daily from 7:00 AM to 9:30 AM. The
+            listed charge is GHS 40 per adult and GHS 20 per child; please
+            confirm the current price with the hotel before your stay.
           </p>
         </Accordion>
-        <Accordion className={styles.accordionItem} label={"Lorem ipsum dolor sit amet, consectetur adipiscing elit."}>
+        <Accordion className={styles.accordionItem} label={"Can I arrange an airport shuttle?"}>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing
-            elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur
-            adipiscing elit.
+            An airport shuttle can be arranged on request. The listed one-way
+            charge is GHS 72 per room. Please contact the hotel at least 24 hours
+            before arrival to arrange it and confirm the current fee.
           </p>
+        </Accordion>
+        <Accordion className={styles.accordionItem} label={"What should I know about children and pets?"}>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing
-            elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Family rooms are available. Child rates can depend on age and
+            bedding, so confirm the details for your party when booking. The
+            hotel does not accommodate pets or service animals.
+          </p>
+        </Accordion>
+        <Accordion className={styles.accordionItem} label={"Is a damage deposit required?"}>
+          <p>
+            Listings report a refundable US$10 cash damage deposit at check-in.
+            Please confirm the amount and payment arrangement with the hotel
+            before arrival.
           </p>
         </Accordion>
       </div>

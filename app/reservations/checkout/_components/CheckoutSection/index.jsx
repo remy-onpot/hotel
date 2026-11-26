@@ -1,24 +1,38 @@
 import CheckoutForm from "../CheckoutForm";
 import CheckoutOverview from "../CheckoutOverview";
 import styles from "./styles.module.css";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { getRoomById } from "@/app/_lib/supabase/rooms";
-import { getGuestById, updateGuest } from "@/app/_lib/supabase/guests";
+import { getGuestByEmail, updateGuest } from "@/app/_lib/supabase/guests";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { reservationSchema } from "@/app/_lib/zodSchemas";
-import { createNewReservation } from "@/app/_lib/supabase/reservations";
-import { bookingCancelAction } from "@/app/_lib/actions";
+import { bookingCancelAction, signOutAction } from "@/app/_lib/actions";
 import SelectCountry from "@/app/_ui/SelectCountry";
 import { revalidatePath } from "next/cache";
-import { loadStripe } from "@stripe/stripe-js";
-import axios from "axios";
-// import { NextResponse } from "next/server";
+import { initializePaystackTransaction } from "@/app/_lib/paystack";
 
 async function CheckoutSection() {
   const session = await auth();
+  if (session?.user?.role === "admin") {
+    return (
+      <section className={`${styles.formSection} container`}>
+        <div>
+          <h2>Use a guest account to book</h2>
+          <p>
+            You are signed in with a hotel administrator account. Guest bookings
+            need a guest account, so sign out and continue with a guest login.
+          </p>
+          <form action={signOutAction}>
+            <button type="submit">Sign out</button>
+          </form>
+        </div>
+      </section>
+    );
+  }
+  if (!session?.user?.email) redirect("/signin");
 
-  const reservation_cookies = cookies();
+  const reservation_cookies = await cookies();
   if (!reservation_cookies.has("pending_reservation")) {
     redirect("/rooms");
   }
@@ -29,19 +43,20 @@ async function CheckoutSection() {
 
   const [room, guest] = await Promise.all([
     getRoomById(pending_reservation.room_id),
-    getGuestById(session.user?.id),
+    getGuestByEmail(session.user.email),
   ]);
 
   if (!room) notFound();
+  if (!guest) redirect("/signin");
 
   async function createReservationAction(prevState, formData) {
     "use server";
-    console.log("state");
-    console.log(prevState);
     prevState = { ...prevState, isConfirming: true };
     const fullname = formData.get("fullname");
     const nationalID = formData.get("nationalID");
-    const email = formData.get("email");
+    const session = await auth();
+    if (!session?.user?.email || String(session.user.id) !== String(guest.id)) return { ...prevState, criticalError: "Please sign in again before starting checkout." };
+    const email = session.user.email;
     const phone = formData.get("phone");
     const nationalityWithFlag = formData.get("nationality");
     const message = formData.get("message");
@@ -57,9 +72,9 @@ async function CheckoutSection() {
       });
     } catch (err) {
       // console.log("errors");
-      // console.log(err.errors);
+      // console.log(err.issues);
       prevState = {};
-      err?.errors.forEach((element) => {
+      err?.issues.forEach((element) => {
         prevState[element?.path[0] ?? "unknown"] = element.message;
       });
 
@@ -68,28 +83,21 @@ async function CheckoutSection() {
 
     const [nationality, countryFlag] = nationalityWithFlag.split("%");
 
-    const total_price = (
-      room.price +
-      ((room.price / 2) * pending_reservation.guests_count - 1)
-    ).toFixed(2);
-
-    let flagError = { error: false, payload: "" };
+    let authorizationUrl;
     try {
-      const session = await auth();
-
-      await updateGuest(
-        session?.supabaseAccessToken,
+      const profileUpdate = await updateGuest(
         guest.id,
         fullname,
         nationality,
         countryFlag,
         phone,
-        email,
         nationalID
       );
+      if (profileUpdate.error) throw new Error("Could not save your guest details. Please try again.");
 
       pending_reservation.message = message;
-      cookies().set(
+      const cookiesStore = await cookies();
+      cookiesStore.set(
         "pending_reservation",
         JSON.stringify(pending_reservation),
         {
@@ -98,33 +106,18 @@ async function CheckoutSection() {
         }
       );
 
-      const stripe = await loadStripe(
-        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-      );
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/stripe`,
-        { pending_reservation },
-        {
-          headers: { Authorization: `Bearer ${session?.supabaseAccessToken}` },
-        }
-      );
-      // console.log({ STRIPE: response.data, KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY });
-      // redirect(response.checkout_url); // CANNOT BE USED WITH TRY BLOCK
-      flagError.payload = response.data?.checkout_url;
-      // console.log({ flagError, response });
+      const transaction = await initializePaystackTransaction({
+        email,
+        booking: { ...pending_reservation, guest_id: guest.id },
+        callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment`,
+      });
+      authorizationUrl = transaction.authorization_url;
     } catch (err) {
-      flagError.error = true;
-      console.log("CHECKOUT COOKIE ERROR");
-      console.log(err);
-      return { ...prevState, criticalErr: "Failed to confirm your booking!" };
-    } finally {
-      revalidatePath("/account/history");
-      // TODO: PREVENT REDIRECTING WHEN AN UNHANDLED ERROR OCCURS
-      if (!flagError.error && flagError.payload) {
-        console.log({ URL: flagError.payload });
-        redirect(flagError.payload);
-      }
+      return { ...prevState, criticalError: err?.message ?? "Unable to start payment. Please try again." };
     }
+
+    revalidatePath("/account/history");
+    redirect(authorizationUrl);
   }
 
   return (

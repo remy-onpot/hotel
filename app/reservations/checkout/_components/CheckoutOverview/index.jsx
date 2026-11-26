@@ -4,19 +4,19 @@ import Card from "@/app/_components/Card/Card";
 import Image from "next/image";
 
 import { bookingTotalPrice, nightTotalPrice } from "@/app/utils/reservationsCalcs";
-
-const SUPABASE_ROOMS_URL = process.env.NEXT_PUBLIC_SUPABASE_IMGS_URL;
+import { formatMoney, formatRoomPrice } from "@/app/_lib/money";
+import { getRoomImageUrl } from "@/app/_lib/roomImage";
 
 function CheckoutOverview({ room, pending_reservation }) {
   const totalNights = daysDifferCount(pending_reservation.end_date, pending_reservation.start_date);
   const totalPerNight = nightTotalPrice(room.price, pending_reservation.guests_count);
-  const guestsPrice = ((pending_reservation.guests_count - 1) * (room.price / 2)).toFixed(2);
+  const guestsPrice = (pending_reservation.guests_count - 1) * (room.price / 2);
   const totalPrice = bookingTotalPrice(room.price, pending_reservation.guests_count, totalNights);
   return (
     <div>
       <Card>
         <Card.Thumbnail>
-          <Image fill src={`${SUPABASE_ROOMS_URL}/${room.thumbnail}`} alt={`${room.name} thumbnail`} />
+          <Image fill sizes="(max-width: 700px) 100vw, 40vw" src={getRoomImageUrl(room.thumbnail)} alt={`${room.name} thumbnail`} />
         </Card.Thumbnail>
 
         <Card.Description className={styles.overviewDescription}>
@@ -39,25 +39,26 @@ function CheckoutOverview({ room, pending_reservation }) {
 
           <div className={styles.bookingSummary}>
             <h3>Pricing Breakdown</h3>
+            <p>The USD room rate is for display only. The amount payable is shown in GHS.</p>
             <p>
-              <span>${room.price} x night (Base Rate for 1 Guest)</span>
-              <span>${room.price.toFixed(2)}</span>
+              <span>Base room rate per night (1 guest)</span>
+              <span>{formatRoomPrice(room.price, room.price_usd)}</span>
             </p>
             <p>
               <span>
-                Additional Guests ({pending_reservation.guests_count - 1} x ${room.price / 2}per night)
+                Additional Guests ({pending_reservation.guests_count - 1} x {formatMoney(room.price / 2, "GHS")} per night)
               </span>
-              <span>${guestsPrice}</span>
+              <span>{formatMoney(guestsPrice, "GHS")}</span>
             </p>
             <p>
               <span>Total per Night: </span>
-              <span>${totalPerNight}</span>
+              <span>{formatMoney(totalPerNight, "GHS")}</span>
             </p>
           </div>
 
           <div className={styles.totalPrice}>
             <span>Total Without Taxes ({totalNights} Nights)</span>
-            <span>${totalPrice}</span>
+            <span>{formatMoney(totalPrice, "GHS")}</span>
           </div>
         </Card.Description>
       </Card>

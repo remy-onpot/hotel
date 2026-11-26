@@ -1,0 +1,17 @@
+.adminShell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: 100vh;
+  background: #f7f8f6;
+}
+
+.content {
+  grid-column: 2;
+  min-width: 0;
+  padding: 28px clamp(18px, 3vw, 44px);
+}
+
+@media (max-width: 760px) {
+  .adminShell { grid-template-columns: 1fr; }
+  .content { grid-column: 1; padding: 24px 16px; }
+}

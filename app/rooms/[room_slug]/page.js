@@ -1,15 +1,17 @@
 import { Suspense } from "react";
 import RoomContainer from "./_components/RoomContainer";
 import LoadingSpinner from "@/app/_ui/LoadingSpinner";
+import styles from "./_components/RoomContainer/styles.module.css";
 
 export const metadata = {
-  title: "Room Details",
-  description: "Discover and book a room at the Hotel Booking App ",
+  title: "Rooms at The Winford Boutique Hotel Achimota",
+  description: "Explore room details and plan your stay at The Winford Boutique Hotel Achimota in Accra.",
 };
 
-function RoomDetails({ params }) {
+async function RoomDetails({ params, searchParams }) {
+  const resolvedSearchParams = await searchParams;
   return (
-    <section className="container">
+    <section className={`container ${styles.roomPage}`}>
       <Suspense
         fallback={
           <div className="global-loading">
@@ -17,7 +19,7 @@ function RoomDetails({ params }) {
           </div>
         }
       >
-        <RoomContainer params={params} />
+        <RoomContainer params={params} searchRange={resolvedSearchParams?.range ?? ""} />
       </Suspense>
     </section>
   );

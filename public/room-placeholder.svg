@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Room photo coming soon">
+  <rect width="800" height="600" fill="#e9efec"/>
+  <path d="M160 390h480v34H160zm38-155h404v145H198z" fill="#cbd7d2"/>
+  <path d="M224 270h150v90H224zm202 0h150v90H426z" fill="#f7faf8"/>
+  <path d="M128 432h544v24H128z" fill="#a9bbb3"/>
+  <text x="400" y="510" text-anchor="middle" fill="#64736e" font-family="sans-serif" font-size="28">Room photo coming soon</text>
+</svg>
