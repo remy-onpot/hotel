@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChild, faConciergeBell, faSpa, faSquareParking, faUtensils, faWifi } from "@fortawesome/free-solid-svg-icons";
+import PropertyAmenities from "@/app/_components/PropertyAmenities";
+import PropertyAmenitiesDialog from "@/app/_components/PropertyAmenitiesDialog";
 import styles from "./styles.module.css";
 
 const highlights = [
@@ -27,6 +28,10 @@ export default function Facilities() {
         </li>)}
       </ul>
     </div>
-    <p className={styles.allAmenities}><Link href="/#property-amenities">Explore all property amenities <span aria-hidden="true">→</span></Link></p>
+    <p className={styles.allAmenities}>
+      <PropertyAmenitiesDialog triggerClassName={styles.amenitiesTrigger}>
+        <PropertyAmenities compact />
+      </PropertyAmenitiesDialog>
+    </p>
   </section>;
 }

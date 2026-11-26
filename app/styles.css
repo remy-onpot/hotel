@@ -20,6 +20,17 @@ a {
   text-decoration: none;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #a57343 !important;
+  outline-offset: 3px;
+}
+
 
 /* END RESETING STYLES */
 
@@ -27,6 +38,9 @@ a {
 
 body {
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  color: #293a33;
+  background: #fbfaf7;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -59,8 +73,9 @@ main {
 header {
   position: relative;
   z-index: 100;
-  background-color: #fbf8f1;
-  border-bottom: 1px solid #eae5da;
+  background-color: rgb(255 253 248 / 96%);
+  border-bottom: 1px solid #e8e1d5;
+  box-shadow: 0 4px 18px rgb(38 48 41 / 4%);
 }
 
 header .header-items {
@@ -71,20 +86,31 @@ header .header-items {
 }
 
 header .header-items h2 {
-  color: #26352e;
+  color: #173b34;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 500;
-  letter-spacing: -.035em;
+  letter-spacing: .035em;
+}
+
+header .header-items h2::after {
+  display: block;
+  margin-top: 2px;
+  color: #9b805c;
+  content: "BOUTIQUE HOTEL · ACHIMOTA";
+  font: 600 8px/1.3 "Avenir Next", Avenir, sans-serif;
+  letter-spacing: .17em;
 }
 
 
 
 header nav ul {
   /* display: flex; */
-  gap: 40px;
+  gap: 30px;
   text-transform: uppercase;
-  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: .11em;
+  font-weight: 700;
   display: none;
 }
 

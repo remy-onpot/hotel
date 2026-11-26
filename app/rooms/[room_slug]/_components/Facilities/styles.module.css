@@ -121,8 +121,8 @@
 }
 
 .allAmenities { margin: 20px 0 0; text-align: center; }
-.allAmenities a { color: #315a47; font-size: .86rem; font-weight: 700; }
-.allAmenities a:hover { color: #987448; }
+.allAmenities .amenitiesTrigger { color: #315a47; font-size: .86rem; font-weight: 700; }
+.allAmenities .amenitiesTrigger:hover { color: #987448; }
 
 @media (max-width: 760px) {
   .facilitiesSection { margin: 56px auto; }

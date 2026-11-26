@@ -14,6 +14,12 @@ async function authorized(request) {
 }
 export async function GET(request) {
   const denied = await authorized(request); if (denied) return denied;
+  if (new URL(request.url).searchParams.get("summary") === "1") {
+    const { count, error } = await privilegedQuery("room_service_orders")
+      .select("id", { count: "exact", head: true }).eq("status", "new");
+    if (error) return NextResponse.json({ error: "Could not load the new order count." }, { status: 500 });
+    return NextResponse.json({ newOrders: count ?? 0 });
+  }
   const { data, error } = await privilegedQuery("room_service_orders").select("id, status, total_ghs, guest_note, created_at, reservations(start_date, end_date, guests(fullname)), room_units(room_number), room_service_order_items(product_name, quantity, line_total_ghs)").order("created_at", { ascending: false }).limit(100);
   if (error) return NextResponse.json({ error: "Could not load room-service orders." }, { status: 500 });
   return NextResponse.json({ orders: data ?? [] });

@@ -7,7 +7,7 @@ async function SelectCountry({ defaultCountry, name, id, className }) {
   const countries = await getCountries();
   const options = [
     { value: "", label: "Select country..." },
-    ...countries.map((country) => ({
+    ...(Array.isArray(countries) ? countries : []).map((country) => ({
       value: `${country.name}%${country.flag}`,
       label: country.name,
     })),

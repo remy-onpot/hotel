@@ -4,7 +4,8 @@ import SubmitButton from "@/app/_ui/SubmitButton";
 import styles from "./styles.module.css";
 import { useActionState } from "react";
 
-import SelectCountry from "@/app/_ui/SelectCountry";
+import CustomSelect from "@/app/_ui/CustomSelect";
+import CountryFlag from "@/app/_ui/CountryFlag";
 
 // import "react-toastify/dist/ReactToastify.css";
 
@@ -15,7 +16,7 @@ const initialState = {
   emailErr: "",
 };
 
-function ProfileForm({ guestUpdateAction, guest }) {
+function ProfileForm({ guestUpdateAction, guest, countryOptions }) {
   const [state, formAction] = useActionState(guestUpdateAction, initialState);
 
 
@@ -23,8 +24,9 @@ function ProfileForm({ guestUpdateAction, guest }) {
     <form action={formAction}>
       <div className={styles.profileFormInputs}>
         <div>
-          <label className={styles.formLabel}>Fullname</label>
+          <label htmlFor="profile-fullname" className={styles.formLabel}>Fullname</label>
           <input
+            id="profile-fullname"
             className={styles.formControl}
             type="text"
             placeholder="Alaoui Hassan"
@@ -36,8 +38,9 @@ function ProfileForm({ guestUpdateAction, guest }) {
           )}
         </div>
         <div>
-          <label className={styles.formLabel}>Email Address</label>
+          <label htmlFor="profile-email" className={styles.formLabel}>Email Address</label>
           <input
+            id="profile-email"
             className={styles.formControl}
             defaultValue={guest.email}
             type="email"
@@ -50,28 +53,31 @@ function ProfileForm({ guestUpdateAction, guest }) {
           )}
         </div>
         <div>
-          <label className={styles.formLabel}>
+          <label htmlFor="profile-nationality" className={styles.formLabel}>
             <span>Nationality</span>
-            <span className={styles.countryFlag}>
-              <img
-                src={guest.countryFlag}
-                alt={`${guest.nationality ?? "country"} flag`}
-              />
-            </span>
+            {guest.countryFlag && <span className={styles.countryFlag}>
+              <CountryFlag countryFlag={guest.countryFlag} nationality={guest.nationality} />
+            </span>}
           </label>
 
-          <SelectCountry
+          <CustomSelect
             className={styles.formControl}
-            name={"nationality"}
-            defaultCountry={guest.nationality}
+            name="nationality"
+            id="profile-nationality"
+            ariaLabel="Select nationality"
+            options={countryOptions}
+            defaultValue={countryOptions.find((country) => country.label === guest.nationality)}
+            placeholder="Select country..."
+            required
           />
           {state?.nationality && (
             <span className={styles.errorMessage}>{state.nationality}</span>
           )}
         </div>
         <div>
-          <label className={styles.formLabel}>Phone Number</label>
+          <label htmlFor="profile-phone" className={styles.formLabel}>Phone Number</label>
           <input
+            id="profile-phone"
             className={styles.formControl}
             defaultValue={guest.phone}
             type="tel"
@@ -83,8 +89,9 @@ function ProfileForm({ guestUpdateAction, guest }) {
           )}
         </div>
         <div>
-          <label className={styles.formLabel}>New Password</label>
+          <label htmlFor="profile-password" className={styles.formLabel}>New Password</label>
           <input
+            id="profile-password"
             className={styles.formControl}
             type="password"
             placeholder="**********"
@@ -95,8 +102,9 @@ function ProfileForm({ guestUpdateAction, guest }) {
           )}
         </div>
         <div>
-          <label className={styles.formLabel}>Confirm Password</label>
+          <label htmlFor="profile-confirm-password" className={styles.formLabel}>Confirm Password</label>
           <input
+            id="profile-confirm-password"
             className={styles.formControl}
             type="password"
             placeholder="**********"

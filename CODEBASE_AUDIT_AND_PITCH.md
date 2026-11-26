@@ -1,263 +1,211 @@
-# The Winford Hotel Booking Platform
+# The Winford Hotel Booking and Guest Services Platform
 
 ## Codebase audit and product pitch
 
 **Review date:** 26 November 2026  
-**Review type:** Static source and migration review of the current working tree, with the project test suite and production build run. This is not a penetration test, production database inspection, or browser/device test.
+**Review type:** Static review of the current working tree, application routes, SQL migrations, configuration, and documentation. No tests or build were run for this update. This is not a penetration test, production database inspection, payment sandbox exercise, or browser/device review.
 
 ## Executive summary
 
-This repository contains a Next.js App Router hotel website and booking application for The Winford Boutique Hotel Achimota. Guests can browse rooms, create or use an account, submit bookings, and pay through Paystack in GHS. The project also includes a staff room editor, image management, a front-desk walk-in booking flow, and administrator queues for guest enquiries and payment exceptions. Auth.js provides credentials-based sign-in, while Supabase provides Postgres, Row Level Security (RLS), and image storage.
+This repository contains a Next.js App Router website and guest operations application for The Winford Boutique Hotel Achimota. Guests can browse room types and a curated property gallery, create an account, book and pay online in GHS through Paystack, manage eligible future reservations, and use an in-stay room-service menu. Staff have tools for room type and physical-room inventory, guest arrivals and check-in/out, walk-in bookings, room-service orders, store products, guest enquiries, payment exceptions, room photos, and property-gallery curation.
 
-The latest changes close the broad guest reservation write path in source: authenticated roles no longer receive reservation insert/update access, guest mutations go through server-only functions, and the Supabase guest JWT is no longer exposed in the Auth.js session. A new migration must still be applied to the deployed database before this protection is active there. OAuth providers and UI have been removed. Delayed paid transactions that lose their room hold now create a durable staff payment-exception item. Guest enquiries have an administrator inbox and email-based rate limiting. Room uploads are decoded and re-encoded as WebP before storage.
+The backend uses Auth.js credentials sessions, Supabase Postgres with RLS and narrowly scoped privileged operations, Supabase Storage, and database functions/constraints for booking and order rules. Recent migrations add separate room types and numbered physical units, reservation transaction records, checked-in reservation protections, room-service product imagery, guest room-service ordering, and property gallery management. USD room prices are explicitly display-only; booking and payment amounts remain GHS.
+
+**WhatsApp and email automation are intentionally on hold.** The current product provides an enquiry inbox and direct `mailto:`/`tel:` links for staff follow-up, but no automated email notifications or WhatsApp messaging integration. Keep those integrations out of current capability claims until the hotel chooses a provider, approves message content and consent/operating rules, and schedules implementation.
+
+These are source-level capabilities. Migration files do not prove that the deployed database has been upgraded, and this review did not inspect production configuration or exercise external services.
 
 ### Assessment at a glance
 
 | Area | Assessment |
 | --- | --- |
-| Product coverage | A broad first version: hotel discovery, room booking, accounts, online payment, room administration, and front-desk walk-ins. |
-| Architecture | Next.js App Router, Auth.js JWT sessions, Supabase Postgres and Storage, server actions and route handlers. |
-| Booking integrity | Checkout holds and an exclusion constraint protect room inventory; direct guest reservation writes are revoked by the new migration. |
-| Payment handling | Paystack transactions are initialized server-side; webhook signatures and transaction status are verified before a hold is confirmed. |
-| Data protection | The old guest listing API and OAuth flows are removed. Reservation writes are routed through scoped server-side functions. |
-| Operational readiness | Apply the new migration and configure staff to monitor the contact and payment exception queues. Business policy decisions remain. |
-| Review confidence | 10 Node tests passed and the production build passed. Lint could not start because the installed ESLint configuration requires a missing `typescript` package. No live database, payment sandbox, or browser session was used. |
+| Guest product | Room discovery, property gallery, accounts, booking and Paystack checkout, reservation management, and in-stay room-service ordering. |
+| Staff operations | Room types and numbered units, front desk, check-in/out, walk-ins, room-service queue, store management, enquiry inbox, payment exceptions, and gallery management. |
+| Booking integrity | Inventory-aware reservation protection and payment hold flow are represented in migrations and source; deployed behavior depends on applying migrations. |
+| Payment records | Paystack GHS flow plus a transaction ledger supporting provider references, manual records, refunds, and legacy Stripe data. The app does not automatically issue Paystack refunds. |
+| Messaging | WhatsApp and email automation intentionally on hold. Staff handle enquiries from the admin inbox. |
+| Review confidence | Static source/migration review only for this update. No build, tests, lint, live database, payment sandbox, or browser verification was performed. |
 
 ## 1. Product scope
 
-Capabilities represented in the source include:
+### Guest-facing capabilities
 
-- Public hotel homepage, gallery, location/contact details, and room highlights.
-- Room catalogue with date availability, filtering, and sorting.
-- Room detail pages with descriptions, features, images, and booking controls.
-- Credential registration/sign-in, guest profile, and booking history. OAuth is currently disabled.
-- Paystack checkout in Ghana cedis (GHS), payment return page, and webhook processing.
-- Reservation editing and cancellation.
-- Allowlisted staff room and image administration.
-- Front-desk guest lookup and walk-in reservations with cash, mobile-money transfer, or POS payment recording.
-- Contact form that stores enquiries in Supabase.
+- Public hotel website with property information, location/contact details, room highlights, and a published property photo gallery.
+- Room catalogue with date availability, filtering, sorting, features, images, and room-type descriptions.
+- Credential registration and sign-in, profile, booking history, and eligible future reservation edits/cancellations.
+- Online booking checkout and Paystack payment in Ghana cedis (GHS).
+- Room-service menu reachable from the public store page and room QR links. Guests can submit orders against an active assigned stay; QR access uses a stay access code.
+- Room-service order status tracking for signed-in guests.
 
-These are code capabilities, not confirmation that the production environment is configured or that hotel operating policies have been approved.
+### Staff capabilities
 
-## 2. Architecture
+- Admin room type editing, pricing, inventory counts, features, and room imagery.
+- Management of numbered physical room units and their QR access tokens.
+- Front-desk arrival/occupied-stay view, guest lookup, check-in/check-out, and walk-in reservation/payment recording.
+- Room-service product and image management, order queue, order status handling, and new-order indicator polling in the admin navigation.
+- Store product management, guest enquiry inbox, payment-exception follow-up, and curated property-gallery upload/publish/order/removal.
+- Transaction history records for online and manually recorded payments/refunds.
+
+### Explicitly deferred
+
+WhatsApp and email automation are intentionally on hold. No automatic booking confirmations, reminders, enquiry notifications, or WhatsApp messages should be represented as available. The contact form stores enquiries for staff review; staff can initiate contact using the displayed email/phone links.
+
+## 2. Architecture and principal routes
 
 ```mermaid
 flowchart LR
   Guest[Guest browser] --> Next[Next.js App Router]
   Staff[Staff browser] --> Next
   Next --> Auth[Auth.js credentials]
-  Next --> Data[Supabase Postgres and RLS]
+  Next --> DB[Supabase Postgres and RLS]
   Next --> Storage[Supabase Storage]
   Next --> Paystack[Paystack GHS]
-  Paystack --> Hook[Payment webhook]
-  Hook --> Data
-  Next --> Desk[Front desk actions]
-  Desk --> Data
+  Paystack --> Hook[Signed payment webhook]
+  Hook --> DB
+  Guest --> QR[Room QR store]
+  QR --> Next
+  Next --> Ops[Staff operations queues]
+  Ops --> DB
 ```
-
-### Main code areas
-
-| Location | Responsibility |
-| --- | --- |
-| `app/page.js`, `app/_components/` | Homepage and shared presentation components. |
-| `app/rooms/` | Room discovery, availability filtering, details, and date selection. |
-| `app/reservations/`, `app/payment/` | Checkout, reservation changes, payment return, and confirmation/expiry screens. |
-| `app/signin/`, `app/signup/`, `app/account/` | Authentication, profile, and reservation history. |
-| `app/admin/`, `app/api/admin/` | Room management, image management, and front-desk workflow. |
-| `app/api/paystack-webhook/` | Signed Paystack webhook handler. |
-| `app/_lib/` | Authentication helpers, validation, Supabase access, Paystack integration, and business logic. |
-| `supabase/migrations/` | Schema, RLS policies, payment fields, room features, holds, write restrictions, payment exceptions, and contact queue logic. |
-| `supabase/seed.sql` | Example room catalogue; rates are starter values pending hotel approval. |
-
-### Main routes
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Hotel landing page. |
-| `/rooms` | Browse and filter rooms. |
-| `/rooms/[room_slug]` | Room details; the current segment is a numeric room ID. |
-| `/reservations/checkout` | Guest details and Paystack initialization. |
-| `/payment` | Payment return and booking status. |
-| `/reservations/edit/[id]` | Edit an eligible reservation. |
-| `/signin`, `/signup` | Guest and staff sign-in/registration. |
-| `/account/profile`, `/account/history` | Guest account management. |
-| `/admin/rooms` | Allowlisted room and image maintenance. |
-| `/admin/front-desk` | Staff walk-in guest lookup and booking. |
-| `/admin/inbox` | Staff queue for guest enquiries. |
-| `/admin/payment-exceptions` | Staff queue for paid bookings that need refund/reconciliation review. |
-| `POST /api/paystack-webhook` | Verify Paystack events and confirm paid holds. |
-| `POST /api/admin/rooms`, `PATCH`, `DELETE` | Allowlisted room mutations. |
-| `POST/DELETE /api/admin/room-images` | Allowlisted room image mutations. |
-| `/api/auth/[...nextauth]` | Auth.js endpoints. |
-| `POST /api/clear-pending-reservation` | Clear pending-booking browser cookies. |
+| `/` | Hotel landing page and property content. |
+| `/rooms`, `/rooms/[room_slug]` | Room-type discovery, availability, details, and booking. |
+| `/reservations/checkout`, `/payment` | Checkout, payment return, and booking status. |
+| `/reservations/edit/[id]`, `/account/*` | Eligible reservation changes, profile, and history. |
+| `/store` | Room-service menu and signed-in active-stay ordering. |
+| `/store/room/[qrToken]` | Room QR menu/order flow with stay access verification. |
+| `/admin/rooms` | Room types, pricing, inventory, and images. |
+| `/admin/front-desk` | Arrivals, occupied stays, guest lookup, and walk-ins. |
+| `/admin/room-service`, `/admin/store` | Room-service order and product operations. |
+| `/admin/gallery` | Property gallery management. |
+| `/admin/inbox`, `/admin/payment-exceptions` | Guest enquiry and payment follow-up queues. |
+| `/api/paystack-webhook` | Verify Paystack events and confirm paid reservations. |
+| `/api/store/orders`, `/api/store/orders/status` | Guest order submission and status retrieval. |
+| `/api/admin/*` | Allowlisted staff mutations for rooms, images, gallery, store, and room service. |
 
-The old `GET /api/guests` endpoint noted in the prior report is absent from this working tree.
+Core code lives under `app/`; SQL schema and access changes are under `supabase/migrations/`. Auth.js handles sessions; Supabase provides Postgres and image storage; Paystack handles online GHS checkout.
 
-## 3. Technical audit
+## 3. Technical audit and deployment considerations
 
-This section tracks the findings from the prior review against the updated working tree. Source changes that add migrations do not take effect in the hosted database until those migrations are applied.
+### Reservation and payment controls
 
-### High priority
+Guest reservation changes use server actions and server-only privileged functions with ownership, status, date, and capacity checks. The security migration revokes broad direct guest reservation writes. Availability is protected by database inventory/overlap logic, and checkout uses a temporary hold before payment. The webhook verifies the signature and independently checks transaction status and booking details before confirmation. A late successful payment that cannot claim its hold is sent to a staff payment-exception queue.
 
-#### H1. Guest RLS permits direct reservation creation and state changes — fixed in source; migration required
+**Deployment dependency:** Apply every migration in order, including `20261126000000_booking_and_operations_hardening.sql`, `20261127000000_room_type_inventory.sql`, `20261130000000_room_service_and_physical_rooms.sql`, `20261202000000_guest_room_service_orders.sql`, `20261203000000_reservation_transactions.sql`, `20261204000000_protect_checked_in_reservations.sql`, and `20261205000000_property_gallery.sql`. Confirm the deployed Supabase project matches the app configuration and verify grants/RPC availability. Source presence alone does not activate database changes.
 
-The initial migration had broad reservation insert/update grants. The new `20261126000000_booking_and_operations_hardening.sql` migration revokes those grants and adds service-role-only functions for editing, cancelling, and hiding eligible reservations. App actions derive the guest ID from the Auth.js session and call these functions through a server-only client. The Auth.js session no longer includes a Supabase guest JWT. The earlier migration's permissive policies remain in history, so the new revoke migration must be applied to production.
+The payment-exception UI records staff review and refund details; it does not initiate provider refunds. The transaction ledger keeps payment attempts and manual/legacy records distinct from reservation lifecycle data. Historical Stripe/USD data remains in the schema, so reports must respect each transaction's stored provider and currency.
 
-**Deployment step:** Apply the new migration, then verify guest-role insert/update privileges are revoked in the deployed Supabase project. The RPC functions are callable only by `service_role`; online booking confirmation remains in the verified payment path.
+### Physical inventory and stay lifecycle
 
-#### H2. OAuth sign-in — disabled
+The schema distinguishes bookable room types from numbered physical room units, associates stays with units, and generates QR tokens for rooms. Front desk operations include arrival and occupied-stay workflows. The checked-in reservation migration adds database-side protections against changing stays after check-in. Validate the initial temporary room labels against the hotel's actual room numbering before relying on unit assignment or printing QR codes.
 
-Google/Facebook providers, OAuth callback logic, sign-in buttons, adapter package, and related environment settings have been removed. Legacy `next_auth` tables are left in the historical migration for existing deployments; they are not used by the app.
+### Room service and store
 
-**Status:** No OAuth authentication is configured. Guest signup checks and reports database creation errors.
+Guests can browse products and submit orders for an active assigned stay or through room QR access with an access code. Database functions validate active stays and product availability and create order/line-item records with GHS totals. Staff manage products and process the order queue; the admin navigation polls for a new-order count. The store and room-service workflows are in-app operations; no external notification automation is implemented.
 
-### Medium priority
+### Gallery and image handling
 
-#### M1. Reservation editing — server-side checks and database constraint
+Staff can curate published property-gallery images and room images. Room uploads are signature-checked, decoded with pixel limits, and normalized to WebP before storage. The gallery migration creates ordered, publishable gallery records. Confirm that the configured Supabase bucket exists and has the intended public-read policy before deployment.
 
-`reservationUpdateAction` checks ownership, status, future start date, guest count, and date overlap, then calls a service-role-only RPC that repeats ownership, status, date, and capacity checks. The exclusion constraint catches overlapping active stays if two edits race. Direct guest updates are blocked by H1's migration.
+### Identity, authorization, and enquiries
 
-**Status:** Regression tests cover half-open turnover dates, active holds, editable states, and guest capacity.
+OAuth is disabled; guests use credentials and staff authenticate through Supabase Auth with trusted `app_metadata.role = admin`. Privileged database access is server-only. Staff routes and endpoints should continue to use the shared admin-session checks. Contact submissions are stored for administrator review and throttled by normalized email (three per hour in the current database workflow). This is not an email notification system or a full anti-spam service.
 
-#### M2. Late payment exception queue — added
+### Business and operational decisions
 
-The claim RPC creates a pending hold for 15 minutes. If a verified payment cannot confirm its hold, the reservation is marked `conflict_refund_required` and a durable payment exception is written. Allowlisted staff can review and record follow-up at `/admin/payment-exceptions`, including a refund reference and notes.
+- Approve GHS rates, occupancy rules, taxes, and any additional-guest charges before accepting live bookings.
+- Confirm cancellation, refund, no-show, hold duration, check-in/out, and booking guarantee policies.
+- Establish staff owners and response expectations for the enquiry, payment exception, front-desk, and room-service queues.
+- Validate room-unit numbering and QR access-code issuance/revocation procedures.
+- Decide how staff settle room-service folios and record manual payments/refunds.
+- Keep WhatsApp and email automation marked as intentionally on hold until provider, consent, templates, and ownership are approved.
 
-**Operational limit:** The queue records and tracks staff follow-up; it does not initiate a Paystack refund automatically. Staff must complete the refund/reconciliation with the provider and record the outcome.
+## 4. Configuration and readiness checklist
 
-#### M3. Database read errors — surfaced
+Use `.env.example` for the authoritative variable list. Configure secrets only in the hosting platform and never commit them. This review did not read `.env.local` or inspect live configuration.
 
-Room and reservation reads now distinguish a successful empty result from a failed query: catalogue/detail helpers throw a user-safe error, while availability helpers return an explicit error consumed by the page. Reservation history/detail queries throw on database errors.
+- Supabase URL, publishable key, server-side secret key, schema, and image bucket.
+- `AUTH_SECRET`, plus staff accounts with trusted administrator app metadata.
+- Paystack secret key, webhook endpoint, and provider dashboard configuration.
+- `NEXT_PUBLIC_APP_URL` and production host configuration.
+- All migrations applied in order; verify the new room service, transaction, checked-in stay, and gallery schema in the deployed project.
+- Public image bucket read behavior and upload/delete policies.
+- Staff assigned to inbox, payment exception, front desk, and room-service queues.
+- Hotel-approved rates and policies reflected in site copy and operations.
+- WhatsApp and email automation remain off/on hold; do not configure or promise them as live features.
 
-**Status:** Build succeeded. Live database failure behavior has not been exercised.
+## 5. Recommended next steps
 
-#### M4. Contact enquiry workflow — added
-
-Contact messages now enter an administrator-only inbox at `/admin/inbox`, where staff can track new, in-progress, and resolved items. The database submission function serializes submissions by normalized email and caps each address at three per hour.
-
-**Operational limit:** This is email-based throttling; it is not a full anti-spam service or notification system. Assign staff to monitor the inbox.
-
-#### M5. Admin upload content — decoded and normalized
-
-Each room card supports batch selection of up to 10 images. The image route enforces the allowlist, per-file size limit, and MIME allowlist, checks each file signature, decodes images with Sharp under a pixel limit, applies orientation, and re-encodes them to WebP before upload. The first successfully uploaded image can be assigned as the room cover. Storage paths and content types are set server-side.
-
-**Status:** Added a Sharp dependency and tests for valid normalization and malformed input rejection. Upload rate limiting remains a future hardening item.
-
-### Lower priority / business readiness
-
-#### L1. Prices and guest surcharges need hotel approval
-
-`app/utils/reservationsCalcs.js` applies a per-additional-guest price increase, and the seed file contains example GHS room prices. Confirm rates, taxes, and surcharge rules with hotel management before publishing prices or charging guests.
-
-#### L2. Payment and cancellation promises need written policy
-
-The code represents pending holds, confirmed reservations, cancellation, and walk-in payment methods. Confirm cancellation/refund terms, no-show handling, the hold duration, and the exact point at which a reservation is guaranteed. Ensure the customer-facing copy matches the operating procedure.
-
-#### L3. Legacy Stripe data remains alongside current Paystack bookings
-
-Migrations preserve Stripe session identifiers and record historical USD currency while new direct bookings use GHS. Reporting and account history must display each reservation's stored currency and payment provider instead of assuming one currency.
-
-#### L4. Automated regression coverage — added
-
-The project now has a `test` script using Node's built-in test runner. Eleven tests cover booking rules, image validation/normalization, OAuth removal, reservation grant revocation, payment verification idempotency, and contact throttle/queue contracts. The production build completed successfully. The lint command could not start because the installed Next ESLint config requires a `typescript` package that is absent from `node_modules`.
-
-## 4. Security and operational notes
-
-### Controls visible in source
-
-- The old broad guest lookup API has been deleted from this tree.
-- Guest profile and reservation read policies check guest ownership.
-- Guest credential passwords are hashed with bcrypt before storage.
-- Privileged Supabase access is server-only and exposed through a small set of helper methods rather than a general client export.
-- Admin endpoints check a configured email allowlist and reject a mismatched Origin header when present.
-- Payment initialization derives room price and guest capacity server-side and creates a hold through a privileged database RPC.
-- The database exclusion constraint prevents overlapping pending/confirmed reservations using half-open date ranges.
-- The webhook checks a signature and independently verifies transaction status with Paystack before attempting to confirm a hold.
-- Room image uploads are signature-checked, decoded, pixel-limited, and re-encoded as WebP.
-
-The new reservation-write restriction takes effect in production only after the latest migration is applied and its grants are verified.
-
-### Deployment dependencies to verify
-
-Use `.env.example` as the environment variable checklist. Confirm production values are set in the hosting platform and match the same Supabase project. Do not copy secret values into this report or source control.
-
-- Supabase URL, publishable key, server-side secret key, and schema.
-- `AUTH_SECRET` and staff Supabase Auth accounts with trusted `app_metadata.role = admin`.
-- Paystack secret key and webhook URL/signing configuration.
-- `NEXT_PUBLIC_APP_URL` and image bucket configuration.
-- All migrations applied in order, especially the hold/exclusion, walk-in, and `20261126000000_booking_and_operations_hardening.sql` changes.
-- Public room image bucket and appropriate storage policies.
-- No OAuth provider credentials are required; historical `next_auth` tables are unused.
-- Staff assigned to review `/admin/inbox` and `/admin/payment-exceptions`, plus procedures for webhooks, refunds, contact enquiries, and backups.
-
-The local `.env.local` file was not read or included in this review.
-
-## 5. Recommended work order
-
-1. Apply the new Supabase migration in production and verify direct guest reservation writes are denied.
-2. Assign staff owners and response expectations for the enquiry inbox and payment exception queue.
-3. Add provider-side refund execution and reconciliation if staff need refunds initiated from the application.
-4. Confirm rates, occupancy rules, cancellation/refund terms, and booking guarantee language with hotel management.
-5. Extend automated checks to cover deployed RLS behavior, payment retries, delayed payment handling, admin authorization, and walk-in bookings.
-6. Add monitoring and alerting for payment callbacks, unresolved payment exceptions, database failures, image storage errors, and contact enquiries.
-7. Install the missing `typescript` development dependency or adjust the ESLint setup so lint can run reliably.
+1. Reconcile and apply migrations to the intended production Supabase project; verify critical constraints, grants, and functions.
+2. Replace temporary physical-room labels with approved room numbers and prepare QR issuance/access procedures.
+3. Validate an end-to-end test booking, payment webhook, check-in/out, room-service order, and staff queue workflow in a non-production environment.
+4. Confirm pricing, cancellation/refund, no-show, room-service settlement, and check-in policies with hotel management.
+5. Assign queue ownership and operational response targets, including payment exception reconciliation.
+6. Add monitoring for webhook failures, database errors, unresolved exceptions, image failures, and unprocessed room-service orders.
+7. Review automated regression coverage for inventory concurrency, physical room assignment, check-in protection, guest ordering authorization, transaction/refund records, and admin boundaries.
+8. Revisit WhatsApp/email automation only when intentionally taken off hold and requirements are approved.
 
 ## 6. Plain-language explanation
 
-The website acts as an online front desk. Guests can look through the rooms, choose dates, create an account, and pay online. Staff can update room details and photos, and record guests who arrive or book by phone. The website stores booking information in a database and uses Paystack to collect online payments.
+The platform gives guests one place to explore the hotel, choose a room and dates, book, pay, and manage eligible upcoming reservations. During a stay, guests can use the room-service menu from the website or a room QR code. Hotel staff can manage rooms and photos, assign numbered rooms, handle arrivals and walk-ins, process room-service orders, and review enquiries or payment issues.
 
-Guest booking writes now go through server-side checks, and staff have a queue to review successful payments whose room holds could not be confirmed. The new database migration must be applied in production for the reservation restrictions to take effect. Staff also need to monitor the enquiry inbox and record payment follow-up; the app records refund outcomes but does not process Paystack refunds itself.
+The website stores operational records in Supabase and uses Paystack for online GHS payments. Staff still need to handle enquiries, refunds, and day-to-day follow-up. **WhatsApp and email automation are intentionally on hold**, so the system does not automatically send those messages.
 
 ## 7. Pitch and marketing version
 
 ### Short pitch
 
-**A warmer, simpler way to book your stay at The Winford Boutique Hotel Achimota.** Explore the rooms, choose your dates, and arrange your stay online, with a direct payment option and a personal hotel team ready to help.
+**A thoughtful, connected stay at The Winford Boutique Hotel Achimota.** Explore the rooms, plan and pay for your booking online, and enjoy a convenient room-service menu during your stay, with the hotel team supporting you at every step.
 
 ### Guest-facing website copy
 
-**Your stay in Achimota starts here.**  
-Discover The Winford Boutique Hotel, explore the rooms, and plan your visit in a few simple steps. Choose the dates that suit you, review your booking details, and continue to secure payment. Need help before you arrive? Get in touch with our team.
+**Your stay in Achimota starts here.** Explore the rooms and property, choose the dates that suit you, and arrange your stay online. Once checked in, browse the room-service menu from your room. Need help? Contact our hotel team directly.
 
 ### Value proposition
 
-- **Explore with clarity:** See room details, features, and photos before choosing your stay.
-- **Plan your visit:** Select dates and guest numbers, review your booking, and continue to payment.
-- **Keep plans together:** Sign in to view your booking history and manage eligible reservations.
-- **Reach the hotel team:** Send an enquiry through the website or speak with the front desk.
+- **Choose with confidence:** Review room details, features, availability, and property photos.
+- **Plan your stay:** Book dates and guest numbers, then continue to secure GHS payment.
+- **Manage your plans:** Sign in to view your history and manage eligible future reservations.
+- **Order during your stay:** Browse room service from the website or room QR menu.
+- **Keep the team connected:** Staff use shared tools for arrivals, room service, enquiries, and payment follow-up.
 
 ### Hotel-team pitch
 
-The platform brings room discovery, online booking, guest accounts, and basic room maintenance together in one website. Staff can also record walk-in bookings and payment methods through a front-desk workflow. The codebase provides a foundation for direct GHS bookings; limiting guest database writes and establishing payment exception handling are the next steps toward dependable live operations.
+The platform brings direct bookings and practical guest operations into one application. Staff can manage room types and numbered units, arrivals, walk-ins, room-service products and orders, property imagery, guest enquiries, and payment follow-up. It provides an operational base for a connected guest experience, while refunds and guest communications still require staff handling.
 
 ### Claims to confirm before publishing
 
-- Room rates, taxes, and additional-guest charges.
-- Whether a successful payment guarantees the room and how long checkout holds it.
-- Cancellation, modification, refund, and no-show conditions.
-- Payment methods enabled on the live Paystack account.
-- Room features, accessibility details, and image accuracy.
-- Who handles enquiries and expected response times.
+- Room rates, taxes, occupancy, and additional guest charges.
+- Payment methods enabled for the live Paystack account and booking guarantee wording.
+- Cancellation, change, refund, and no-show conditions.
+- Room-service hours, product availability, pricing, and settlement process.
+- Accurate room numbers, QR access instructions, amenities, and images.
+- Staff contacts and enquiry response expectations.
+- Do not claim automated WhatsApp or email messages; both are intentionally on hold.
 
 ## 8. Review boundaries and source references
 
-The review considered the current working-tree application routes and components, Auth.js configuration, Supabase helpers, SQL migrations, seed file, package configuration, environment example, README, and installed Next.js 16 guidance for route handlers and server actions. The Next.js guidance emphasizes that server actions are directly reachable and must perform authentication and authorization checks; this report applies that principle to the current mutation paths.
+This update reviewed the working-tree routes and components, authentication and Supabase helpers, SQL migrations through `20261205000000_property_gallery.sql`, package configuration, README, and the installed Next.js documentation landing page. No code implementation was changed. Per the user's repository instruction, Next.js documentation under `node_modules/next/dist/docs/` must be consulted before changing application code; this document-only update did not require framework API changes.
 
-The Node test suite passed (11 tests), and `next build` completed successfully. `npm run lint` could not start because the installed ESLint configuration imports `typescript`, which is missing from `node_modules`. No live database inspection, payment sandbox, production configuration review, or browser/device test was performed. The working tree already contains many modified, deleted, and untracked files. This document describes the files as they exist in the working tree and does not attribute those changes to this audit.
+No tests, build, lint, live database inspection, payment sandbox, production configuration review, or browser/device test were performed for this update. The working tree may contain pre-existing edits; this report describes the observed state and does not attribute those changes to the audit.
 
-Key source references:
+Key references:
 
-- `supabase/migrations/20261113000000_initial_schema.sql` — original reservation grants and ownership-only RLS policies.
-- `supabase/migrations/20261126000000_booking_and_operations_hardening.sql` — guest write revocation, scoped mutation RPCs, payment exception queue, and contact throttling.
-- `supabase/migrations/20261119000000_booking_hardening_walk_ins.sql` — exclusion constraint, hold function, reservation states, and walk-in support.
-- `app/_lib/actions.js` — guest reservation update and cancellation server actions.
-- `app/_lib/paystack.js`, `app/_lib/supabase/privilegedReservations.js`, `app/api/paystack-webhook/route.js` — payment hold, verification, and confirmation.
-- `auth.js`, `app/_lib/authjs/credentialsCallback.js` — credentials-only guest and administrator sessions.
+- `supabase/migrations/20261126000000_booking_and_operations_hardening.sql` — reservation write restrictions, scoped functions, payment exceptions, and enquiry throttling.
+- `supabase/migrations/20261127000000_room_type_inventory.sql` — room-type inventory protection.
+- `supabase/migrations/20261128000000_usd_display_rate.sql`, `20261129000000_room_usd_display_price.sql` — display-only USD pricing evolution; GHS remains booking currency.
+- `supabase/migrations/20261130000000_room_service_and_physical_rooms.sql` — numbered room units, QR tokens, and room-service schema.
+- `supabase/migrations/20261201000000_room_service_product_images.sql`, `20261202000000_guest_room_service_orders.sql` — product imagery and guest order function.
+- `supabase/migrations/20261203000000_reservation_transactions.sql` — transaction ledger.
+- `supabase/migrations/20261204000000_protect_checked_in_reservations.sql` — checked-in reservation protections.
+- `supabase/migrations/20261205000000_property_gallery.sql` — property-gallery storage model.
+- `app/store/`, `app/api/store/orders/`, `app/admin/room-service/` — guest ordering and staff order operations.
+- `app/admin/front-desk/` — arrival, occupied-stay, guest lookup, and walk-in tools.
+- `app/admin/gallery/`, `app/api/admin/gallery/`, `app/_lib/supabase/gallery.js` — gallery administration and public reads.
+- `app/_lib/paystack.js`, `app/api/paystack-webhook/`, `app/_lib/supabase/privilegedReservations.js` — payment verification and reservation confirmation.
+- `app/_lib/imageValidation.js`, `app/api/admin/room-images/` — room image validation and normalization.
 - `app/admin/inbox/`, `app/admin/payment-exceptions/` — staff follow-up queues.
-- `app/_lib/imageValidation.js`, `app/api/admin/room-images/route.js` — image decoding and WebP normalization.
-- `tests/` — booking, image, and security-contract regression tests.
-- `app/_lib/supabase/rooms.js` — room availability and error handling.
-- `app/api/admin/room-images/route.js` — privileged room image upload/removal.
-- `app/admin/front-desk/actions.js` — guest lookup and walk-in booking.
-- `supabase/seed.sql`, `app/utils/reservationsCalcs.js` — starter prices and pricing logic.
-- `package.json`, `.env.example`, `README.md` — scripts, configuration, and deployment assumptions.
+- `app/admin/store/`, `app/api/admin/store/` — store product operations.
+- `package.json`, `.env.example`, `README.md` — scripts and setup assumptions.

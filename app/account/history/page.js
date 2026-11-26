@@ -19,17 +19,19 @@ async function History() {
 
   return (
     <>
-      <Heading textClassName={styles.heading}>Your History</Heading>
-      <div>
+      <section className={styles.page}>
+      <header className={styles.pageHeader}><p>YOUR WINFORD ACCOUNT</p><Heading textClassName={styles.heading}>Your stays</Heading><span>Reservations you’ve made at The Winford.</span></header>
+      <div className={styles.reservationList}>
         {reservations.length ? (
           reservations.reverse().map((item) => <ReservationCard key={item.id} reservation={item} />)
         ) : (
-          <div>
-            <p>You have no booked room.</p>
-            <Link href={"/rooms"}>View Rooms</Link>
+          <div className={styles.emptyState}>
+            <p>Your next stay is waiting.</p>
+            <Link href={"/rooms"}>Explore rooms <span aria-hidden="true">→</span></Link>
           </div>
         )}
       </div>
+      </section>
     </>
   );
 }

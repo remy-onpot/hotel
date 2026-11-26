@@ -12,6 +12,8 @@ function Features({ room }) {
     result[group].push({ label, icon: amenity?.icon });
     return result;
   }, {});
+  const allAmenities = Object.values(groups).flat();
+  const previewAmenities = allAmenities.slice(0, 3);
 
   return (
     <>
@@ -38,8 +40,26 @@ function Features({ room }) {
 
       {room.features?.length > 0 && (
         <section className={styles.roomFeatures} aria-labelledby="room-features-heading">
-          <h2 id="room-features-heading">In-room features</h2>
-          <div className={styles.amenityGroups}>
+          <div className={styles.featuresHeader}>
+            <div>
+              <span className={styles.featuresEyebrow}>Thoughtful details</span>
+              <h2 id="room-features-heading">In-room features</h2>
+            </div>
+            <span className={styles.featureCount}>{allAmenities.length} amenities</span>
+          </div>
+          <ul className={styles.featurePreview} aria-label="A few in-room features">
+            {previewAmenities.map(({ label, icon }) => <li className={styles.previewItem} key={label}>
+              <span className={styles.amenityIcon} aria-hidden="true">{icon ? <FontAwesomeIcon icon={icon} /> : <span>✧</span>}</span>
+              <span>{label}</span>
+            </li>)}
+            {allAmenities.length > previewAmenities.length && <li className={styles.moreCount}>+{allAmenities.length - previewAmenities.length} more</li>}
+          </ul>
+          <details className={styles.featureDisclosure}>
+            <summary>
+              <span>View all in-room features</span>
+              <span className={styles.disclosureIcon} aria-hidden="true">+</span>
+            </summary>
+            <div className={styles.amenityGroups}>
             {Object.entries(groups).map(([group, amenities]) => <section className={styles.amenityGroup} key={group}>
               <h3>{group}</h3>
               <ul>{amenities.map(({ label, icon }) => <li key={label}>
@@ -47,7 +67,8 @@ function Features({ room }) {
                 <span>{label}</span>
               </li>)}</ul>
             </section>)}
-          </div>
+            </div>
+          </details>
         </section>
       )}
     </>

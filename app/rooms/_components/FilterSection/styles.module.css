@@ -6,9 +6,9 @@
   margin: 0 0 32px;
   padding: 22px 24px;
   border: 1px solid #ebe4da;
-  border-radius: 8px;
-  background: #fffdfb;
-  box-shadow: 0 8px 24px rgb(38 30 21 / 4%);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fffefa, #f8f5ed);
+  box-shadow: 0 10px 28px rgb(38 30 21 / 5%);
 }
 
 .select { width: 100%; min-width: 230px; }
@@ -27,9 +27,9 @@
   font: inherit;
   font-size: 14px;
 }
-.input:focus { border-color: #9b7848; box-shadow: 0 0 0 3px rgb(155 120 72 / 12%); }
-.formControl :global(.select__control) { min-height: 46px; border-color: #ddd5ca; border-radius: 4px; box-shadow: none; }
-.formControl :global(.select__control--is-focused) { border-color: #9b7848; box-shadow: 0 0 0 3px rgb(155 120 72 / 12%); }
+.input:focus { border-color: #547863; box-shadow: 0 0 0 3px rgb(84 120 99 / 12%); }
+.formControl :global(.hotel-select__control) { min-height: 46px; border-color: #ddd5ca; border-radius: 4px; box-shadow: none; }
+.formControl :global(.hotel-select__control--is-focused) { border-color: #547863; box-shadow: 0 0 0 3px rgb(84 120 99 / 12%); }
 .searchButton {
   display: inline-flex;
   min-height: 46px;
@@ -37,9 +37,9 @@
   justify-content: center;
   gap: 9px;
   padding: 10px 20px;
-  border: 1px solid #8b6840;
-  border-radius: 4px;
-  background: #8b6840;
+  border: 1px solid #173b34;
+  border-radius: 6px;
+  background: #173b34;
   color: #fff;
   cursor: pointer;
   font: inherit;
@@ -47,7 +47,7 @@
   font-weight: 600;
   transition: background-color 150ms ease;
 }
-.searchButton:hover { background: #725534; }
+.searchButton:hover { background: #285647; }
 
 @media (max-width: 760px) {
   .filterSection { align-items: stretch; flex-direction: column; padding: 18px; }

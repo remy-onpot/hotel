@@ -52,6 +52,15 @@ export async function updateGuest(
   return { data, error };
 }
 
+export async function updateGuestContact(id, name, phone) {
+  const { data, error } = await privilegedQuery("guests")
+    .update({ fullname: name, phone })
+    .eq("id", id)
+    .select();
+
+  return { data, error };
+}
+
 export async function updateGuestWithPwd(
   id,
   name,

@@ -51,7 +51,7 @@ export async function privilegedInsertInbox(message) {
   });
 }
 export function privilegedQuery(table) {
-  const allowed = new Set(["rooms", "room_images", "reservations", "guests", "inbox", "payment_exceptions", "room_units", "room_service_products", "room_service_orders", "room_service_order_items"]);
+  const allowed = new Set(["rooms", "room_images", "gallery_images", "reservations", "guests", "inbox", "payment_exceptions", "room_units", "room_service_products", "room_service_orders", "room_service_order_items"]);
   if (!allowed.has(table)) throw new Error("Unsupported privileged query.");
   return getRiskyClient().from(table);
 }
@@ -65,6 +65,30 @@ export async function getAdminRoomData() {
 }
 export async function setRoomTypeUnits(roomTypeId, roomNumbers) {
   return getRiskyClient().rpc("set_room_type_units", { p_room_type_id: roomTypeId, p_room_numbers: roomNumbers });
+}
+export async function getRoomServiceProducts({ availableOnly = true } = {}) {
+  const client = getRiskyClient();
+  const selectProducts = (includeImagePath) => {
+    let query = client.from("room_service_products").select(
+      includeImagePath
+        ? "id, name, description, price_ghs, price_usd, image_path, is_available"
+        : "id, name, description, price_ghs, price_usd, is_available"
+    );
+    if (availableOnly) query = query.eq("is_available", true);
+    return query.order("name");
+  };
+
+  let result = await selectProducts(true);
+  const missingImageColumn = result.error && (
+    result.error.code === "42703" ||
+    result.error.code === "PGRST204" ||
+    result.error.message?.toLowerCase().includes("image_path")
+  );
+  if (missingImageColumn) {
+    result = await selectProducts(false);
+    if (result.data) result.data = result.data.map((product) => ({ ...product, image_path: "" }));
+  }
+  return result;
 }
 export async function privilegedStorage() {
   return getRiskyClient().storage;

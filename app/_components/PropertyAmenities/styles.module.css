@@ -1,4 +1,6 @@
 .section { padding: 92px 0 100px; background: #f7f5ef; color: #293a33; }
+.compactSection { padding: 25px 0 36px; }
+.preview { padding: 62px 0 70px; color: #293a33; background: none; }
 .inner { width: min(1200px, calc(100% - 40px)); margin: 0 auto; }
 .header { max-width: 680px; margin: 0 auto 38px; text-align: center; }
 .eyebrow { margin: 0 0 12px; color: #a27c4a; font-size: .72rem; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }
@@ -6,8 +8,10 @@
 .header > p:last-child { margin: 15px 0 0; color: #69766f; font-size: .98rem; line-height: 1.6; }
 .popular { margin: 0 0 25px; padding: 22px 24px; border: 1px solid #e6dfd2; background: #fffdf9; }
 .popular h3 { margin: 0 0 14px; color: #24463a; font: 500 1.25rem Georgia, serif; }
-.popular ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.popular li { display: inline-flex; padding: 8px 12px; border: 1px solid #e9e4d8; border-radius: 30px; background: #fbfaf6; color: #55645b; font-size: .78rem; }
+.popular ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 0; padding: 0; list-style: none; }
+.popular li { display: flex; min-height: 52px; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e9e4d8; border-radius: 7px; background: #fbfaf6; color: #55645b; font-size: .76rem; }
+.popular li > span { display:grid; flex:0 0 30px; width:30px; height:30px; place-items:center; border-radius:50%; background:#f1ece2; color:#987448; }
+.popular li strong { font-size:.76rem; font-weight:650; line-height:1.3; }
 .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .card { padding: 21px; border: 1px solid #e7e2d8; border-radius: 9px; background: #fff; }
 .cardHeading { display: flex; align-items: center; gap: 11px; margin-bottom: 13px; }
@@ -20,5 +24,13 @@
 .extraNotes article { padding: 19px 22px; border-left: 3px solid #b38b54; background: #eeebe3; }
 .extraNotes p { margin: 0; color: #647068; font-size: .86rem; line-height: 1.5; }
 .extraNotes .noteLabel { margin-bottom: 5px; color: #234238; font: 500 1.08rem Georgia, serif; }
-@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .section { padding: 70px 0; } }
-@media (max-width: 560px) { .inner { width: min(100% - 28px, 460px); } .grid, .extraNotes { grid-template-columns: 1fr; } .card { padding: 18px; } .popular { padding: 18px; } .section { padding: 58px 0; } }
+.previewHeader { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:22px; }
+.previewHeader h2 { margin:0; color:#183b34; font:500 clamp(2rem,4vw,3rem)/1.08 Georgia,serif; }
+.previewHeader .eyebrow { margin-bottom:9px; }
+.previewHeader > div > p:last-child { margin:10px 0 0; color:#69766f; font-size:.92rem; line-height:1.5; }
+.viewAllButton { display:inline-flex; flex:none; min-height:46px; align-items:center; justify-content:center; gap:9px; padding:0 17px; border:1px solid #173b34; border-radius:7px; background:#173b34; color:#fff; font:inherit; font-size:.82rem; font-weight:700; text-decoration:none; cursor:pointer; }
+.viewAllButton:hover { border-color:#285647; background:#285647; }
+.popularPreview { margin:0; padding:0; border:0; background:transparent; }
+.popularPreview h3 { margin-bottom:12px; }
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .popular ul { grid-template-columns: repeat(3,minmax(0,1fr)); } .section { padding: 70px 0; } .compactSection { padding: 22px 0 30px; } }
+@media (max-width: 560px) { .inner { width: min(100% - 28px, 460px); } .grid, .extraNotes { grid-template-columns: 1fr; } .card { padding: 18px; } .popular { padding: 18px; } .popular ul { grid-template-columns: repeat(2,minmax(0,1fr)); gap:7px; } .popular li { min-height:48px; gap:7px; padding:7px; font-size:.7rem; } .popular li > span { flex-basis:26px; width:26px; height:26px; font-size:.7rem; } .popular li strong { font-size:.69rem; } .section { padding: 58px 0; } .compactSection { padding: 18px 0 24px; } .preview { padding:48px 0 52px; } .previewHeader { align-items:flex-start; flex-direction:column; gap:15px; } .viewAllButton { width:100%; } }

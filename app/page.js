@@ -26,7 +26,6 @@ export default async function Home() {
     <>
       <HeroSection bookingSearchAction={bookingSearchAction} />
       <About />
-      <PropertyAmenities />
       <Suspense
         fallback={
           <div className="global-loading">
@@ -35,6 +34,15 @@ export default async function Home() {
         }
       >
         <Rooms />
+      </Suspense>
+      <PropertyAmenities />
+      <Suspense
+        fallback={
+          <div className="global-loading">
+            <LoadingSpinner />
+          </div>
+        }
+      >
         <Gallery />
       </Suspense>
       <Blog />

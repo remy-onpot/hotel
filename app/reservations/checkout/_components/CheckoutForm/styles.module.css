@@ -1,77 +1,17 @@
-.form {
-  width: 100%;
-}
-
-.formHeading {
-  font-size: 24px;
-  position: relative;
-  margin-bottom: 40px;
-  width: fit-content;
-}
-
-.formHeading::after {
-  position: absolute;
-  content: "";
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  height: 2px;
-  background-color: #dc143c;
-}
-
-.formControl {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
-@media (min-width: 996px) {
-  .formControlRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-}
-
-.formLabel {
-  letter-spacing: 1px;
-  color: #656a70;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.formInput, .formTextArea {
-  padding: 16px 12px;
-  border-radius: none;
-  outline: none;
-  border: 1px solid #dedede;
-  font-size: 17px;
-}
-
-.formTextArea {
-  resize: vertical;
-}
-
-
-.errorMessage {
-  font-size: 12px;
-  color: red;
-}
-
-.countryFlag {
-  display: inline-block;
-  width: 24px;
-  overflow: hidden;
-}
-
-.countryFlag img {
-  width: 100%;
-}
-
-.checkOutButtons {
-  display: flex;
-  gap: 16px;
-}
+.form { width: 100%; }
+.formHeading { position: relative; width: fit-content; margin: 0 0 34px; color: #193c33; font: 500 1.65rem Georgia, serif; }
+.formHeading::after { position: absolute; bottom: -12px; left: 0; width: 56px; height: 2px; background: #b28a55; content: ""; }
+.formControl { display: flex; flex-direction: column; gap: 8px; margin-bottom: 17px; }
+@media (min-width: 996px) { .formControlRow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } }
+.formLabel { display: flex; align-items: center; gap: 7px; color: #46584d; font-size: .84rem; font-weight: 700; }
+.optionalLabel { color: #8a8e86; font-size: .76rem; font-weight: 500; }
+.fieldHelp { color: #727c74; font-size: .8rem; line-height: 1.5; }
+.formInput, .formTextArea { display: block; width: 100%; min-height: 56px; padding: 14px 16px; border: 1px solid #d5d8d1; border-radius: 8px; background: #fcfbf8; color: #26382f; font: inherit; font-size: 1rem; line-height: 1.4; transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease; }
+.formInput:hover, .formTextArea:hover { border-color: #b8c2b8; background: #fff; }
+.formInput:focus-visible, .formTextArea:focus-visible { border-color: #547863; outline: 3px solid rgb(84 120 99 / 15%); outline-offset: 1px; background: #fff; }
+.formTextArea { min-height: 132px; resize: vertical; }
+.errorMessage { color: #963f34; font-size: .78rem; }
+.countryFlag { display: inline-block; width: 24px; overflow: hidden; font-size: 18px; line-height: 1; }
+.countryFlag img { width: 100%; }
+.checkOutButtons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+@media (max-width: 520px) { .checkOutButtons { flex-direction: column; } }

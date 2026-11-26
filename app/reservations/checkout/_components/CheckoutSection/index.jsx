@@ -3,12 +3,11 @@ import CheckoutOverview from "../CheckoutOverview";
 import styles from "./styles.module.css";
 import { cookies } from "next/headers";
 import { getRoomById } from "@/app/_lib/supabase/rooms";
-import { getGuestByEmail, updateGuest } from "@/app/_lib/supabase/guests";
+import { getGuestByEmail, updateGuestContact } from "@/app/_lib/supabase/guests";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { reservationSchema } from "@/app/_lib/zodSchemas";
 import { bookingCancelAction, signOutAction } from "@/app/_lib/actions";
-import SelectCountry from "@/app/_ui/SelectCountry";
 import { revalidatePath } from "next/cache";
 import { initializePaystackTransaction } from "@/app/_lib/paystack";
 
@@ -53,12 +52,10 @@ async function CheckoutSection() {
     "use server";
     prevState = { ...prevState, isConfirming: true };
     const fullname = formData.get("fullname");
-    const nationalID = formData.get("nationalID");
     const session = await auth();
     if (!session?.user?.email || String(session.user.id) !== String(guest.id)) return { ...prevState, criticalError: "Please sign in again before starting checkout." };
     const email = session.user.email;
     const phone = formData.get("phone");
-    const nationalityWithFlag = formData.get("nationality");
     const message = formData.get("message");
 
     try {
@@ -66,8 +63,6 @@ async function CheckoutSection() {
         fullname,
         email,
         phone,
-        nationality: nationalityWithFlag,
-        nationalID,
         message,
       });
     } catch (err) {
@@ -81,18 +76,9 @@ async function CheckoutSection() {
       return { ...prevState };
     }
 
-    const [nationality, countryFlag] = nationalityWithFlag.split("%");
-
     let authorizationUrl;
     try {
-      const profileUpdate = await updateGuest(
-        guest.id,
-        fullname,
-        nationality,
-        countryFlag,
-        phone,
-        nationalID
-      );
+      const profileUpdate = await updateGuestContact(guest.id, fullname, phone);
       if (profileUpdate.error) throw new Error("Could not save your guest details. Please try again.");
 
       pending_reservation.message = message;
@@ -127,17 +113,7 @@ async function CheckoutSection() {
         room={room}
         guest={guest}
         bookingCancelAction={bookingCancelAction}
-      >
-        {/* PASSING THIS AS CHILD TO PREVENT UNCESSACERY RERENDERS FOR THIS COMPONENT SINCE:
-          1 - ITS A SERVER COMPONENT AND NEEDED TO BE RENDERED INSIDE A CLIENT COMPONENT
-          2 - IT HAS SOME INNER API CALLS, SO RENDERING AS A CHILD WOULD PREVENT WASTING RENDERES
-        */}
-        <SelectCountry
-          name={"nationality"}
-          className={styles.formInput}
-          defaultCountry={guest.nationality}
-        />
-      </CheckoutForm>
+      />
 
       <CheckoutOverview room={room} pending_reservation={pending_reservation} />
     </div>

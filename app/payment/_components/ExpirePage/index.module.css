@@ -16,7 +16,7 @@
 .expiredTitle {
   font-size: 2rem;
   margin-bottom: 1rem;
-  color: #b91c1c;
+  color: #77552e;
 }
 
 .expiredMessage {
@@ -39,7 +39,7 @@
 }
 
 .infoIcon {
-  color: #991b1b;
+  color: #315b46;
 }
 
 .actionButtons {
@@ -59,21 +59,21 @@
 }
 
 .primaryButton {
-  background-color: #b91c1c;
+  background-color: #173b34;
   color: white;
 }
 
 .primaryButton:hover {
-  background-color: #991b1b;
+  background-color: #285647;
 }
 
 .secondaryButton {
-  background-color: #fef2f2;
-  color: #991b1b;
+  background-color: #f2f4ef;
+  color: #315b46;
 }
 
 .secondaryButton:hover {
-  background-color: #fee2e2;
+  background-color: #e8eee8;
 }
 
 @media (max-width: 1024px) {

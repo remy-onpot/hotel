@@ -3,14 +3,15 @@ import styles from "./styles.module.css";
 import Card from "@/app/_components/Card/Card";
 import Image from "next/image";
 
-import { bookingTotalPrice, nightTotalPrice } from "@/app/utils/reservationsCalcs";
+import { bookingTotalPrice, extraGuestCount, INCLUDED_GUESTS, nightTotalPrice } from "@/app/utils/reservationsCalcs";
 import { formatMoney, formatRoomPrice } from "@/app/_lib/money";
 import { getRoomImageUrl } from "@/app/_lib/roomImage";
 
 function CheckoutOverview({ room, pending_reservation }) {
   const totalNights = daysDifferCount(pending_reservation.end_date, pending_reservation.start_date);
   const totalPerNight = nightTotalPrice(room.price, pending_reservation.guests_count);
-  const guestsPrice = (pending_reservation.guests_count - 1) * (room.price / 2);
+  const additionalGuests = extraGuestCount(pending_reservation.guests_count);
+  const guestsPrice = additionalGuests * (room.price / 2);
   const totalPrice = bookingTotalPrice(room.price, pending_reservation.guests_count, totalNights);
   return (
     <div>
@@ -41,15 +42,13 @@ function CheckoutOverview({ room, pending_reservation }) {
             <h3>Pricing Breakdown</h3>
             <p>The USD room rate is for display only. The amount payable is shown in GHS.</p>
             <p>
-              <span>Base room rate per night (1 guest)</span>
+              <span>Room rate per night (includes up to {INCLUDED_GUESTS} guests)</span>
               <span>{formatRoomPrice(room.price, room.price_usd)}</span>
             </p>
-            <p>
-              <span>
-                Additional Guests ({pending_reservation.guests_count - 1} x {formatMoney(room.price / 2, "GHS")} per night)
-              </span>
+            {additionalGuests > 0 && <p>
+              <span>Additional guests ({additionalGuests} × {formatMoney(room.price / 2, "GHS")} per guest, per night)</span>
               <span>{formatMoney(guestsPrice, "GHS")}</span>
-            </p>
+            </p>}
             <p>
               <span>Total per Night: </span>
               <span>{formatMoney(totalPerNight, "GHS")}</span>

@@ -26,18 +26,20 @@
 
 .brand small { color: #c4d5cd; font-family: inherit; font-size: .65rem; letter-spacing: .14em; }
 .sidebar nav { display: grid; gap: 6px; }
-.sidebar nav a { padding: 12px 13px; border-radius: 8px; color: #e2ebe6; text-decoration: none; font-weight: 600; }
+.sidebar nav a { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 13px; border-radius: 8px; color: #e2ebe6; text-decoration: none; font-weight: 600; }
 .sidebar nav a:hover { background: rgb(255 255 255 / 9%); color: #fff; }
 .sidebar nav a.active { background: #fff; color: #173b34; }
+.orderBadge { display: inline-flex; min-width: 22px; height: 22px; align-items: center; justify-content: center; padding: 0 6px; border: 1px solid rgb(255 255 255 / 20%); border-radius: 999px; background: #c76a43; color: #fff; font-size: .7rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sidebar nav a.active .orderBadge { border-color: #f1d9c9; background: #a94e35; color: #fff; }
 .sidebarFooter { display: grid; gap: 12px; margin: auto 10px 4px; padding-top: 24px; }
-.sidebarFooter a, .sidebarFooter button { color: #d3e0da; text-align: left; text-decoration: none; font: inherit; }
+.sidebarFooter a, .sidebarFooter button { display: flex; min-height: 44px; align-items: center; color: #d3e0da; text-align: left; text-decoration: none; font: inherit; }
 .sidebarFooter button { padding: 0; border: 0; background: none; cursor: pointer; }
 .sidebarFooter a:hover, .sidebarFooter button:hover { color: #fff; }
 
 @media (max-width: 760px) {
   .sidebar { position: static; width: auto; height: auto; min-height: 0; padding: 16px; overflow: visible; }
   .brand { margin: 0 0 15px; }
-  .sidebar nav { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 3px; }
-  .sidebar nav a { flex: 0 0 auto; padding: 10px; font-size: .9rem; }
+  .sidebar nav { display: flex; overflow-x: auto; gap: 4px; padding: 0 0 8px; scrollbar-width: thin; scrollbar-color: #9eb8aa #244a3d; scroll-snap-type: x proximity; }
+  .sidebar nav a { flex: 0 0 auto; padding: 10px 12px; font-size: .9rem; scroll-snap-align: start; }
   .sidebarFooter { display: flex; justify-content: flex-end; gap: 18px; margin: 12px 0 0; padding: 0; font-size: .9rem; }
 }

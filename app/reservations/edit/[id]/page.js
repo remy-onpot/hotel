@@ -3,6 +3,7 @@ import EditSection from "./_components/EditSection";
 import { notFound } from "next/navigation";
 import { getReservationByID } from "@/app/_lib/supabase/reservations";
 import { auth } from "@/auth";
+import { canEditReservation, getAccraToday } from "@/app/_lib/bookingRules";
 
 export const metadata = {
   title: "Edit Reservation",
@@ -17,7 +18,7 @@ async function Page({ params }) {
   const reservation = await getReservationByID(reservation_id, session.user.id);
   if (!reservation) notFound();
 
-  const isUpdateAllowed = reservation.status === "confirmed" || reservation.status === "unconfirmed";
+  const isUpdateAllowed = canEditReservation(reservation, getAccraToday());
 
   if (!isUpdateAllowed) return <h4>Sorry, but reservation cannot be edited.</h4>;
 

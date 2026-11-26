@@ -1,4 +1,7 @@
 .select { min-width: 0; color: #29251f; font: inherit; }
+.selectPlaceholder { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 10px; padding: 0 .65rem; border: 1px solid #cfc6ba; border-radius: 6px; background: #fff; }
+.selectPlaceholder > span:first-child { overflow: hidden; color: #77716a; text-overflow: ellipsis; white-space: nowrap; }
+.placeholderIndicator { flex: 0 0 0; width: 0; height: 0; border-top: 5px solid #756b60; border-right: 4px solid transparent; border-left: 4px solid transparent; }
 .select :global(.hotel-select__control) { min-height: 44px; padding: 0 .65rem; border: 1px solid #cfc6ba; border-radius: 6px; background: #fff; box-shadow: none; cursor: pointer; }
 .select :global(.hotel-select__control:hover) { border-color: #9b7848; }
 .select :global(.hotel-select__control--is-focused) { border-color: #9b7848; box-shadow: 0 0 0 3px rgb(155 120 72 / 16%); }

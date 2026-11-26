@@ -23,8 +23,9 @@
 
 .accountSidebar {
   /* background-color: #ddd; */
-  background-color: #252525;
+  background: linear-gradient(155deg, #173b34, #244a3d);
   padding: 20px 12px;
+  border-radius: 10px;
 }
 
 @media (min-width: 780px) {
@@ -33,6 +34,8 @@
     max-height: 70vh;
     position: sticky;
     top: 20px;
+    border: 1px solid #315849;
+    box-shadow: 0 12px 28px rgb(30 53 43 / 12%);
   }
 }
 
@@ -41,6 +44,20 @@
   display: flex;
   gap: 16px;
 }
+
+@media (max-width: 779px) {
+  .sidebarList {
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 5px;
+    scrollbar-width: thin;
+    scrollbar-color: #9eb8aa #244a3d;
+  }
+
+  .sidebarList li { flex: 0 0 auto; }
+}
+
+.accountNavigation { min-width: 0; }
 
 @media (min-width: 780px) {
   .sidebarList {
@@ -67,8 +84,9 @@
   gap: 12px;
   width: 100%;
   padding: 8px 16px;
-  background-color: #1a1a1a;
-  color: #F1F1F1;
+  min-height: 44px;
+  background-color: rgb(255 255 255 / 7%);
+  color: #f2f4ed;
   transition: all 150ms linear;
 }
 
@@ -79,11 +97,11 @@
 }
 
 .sidebarLink:hover, .sidebarButton:hover {
-  background-color: #dc143c;
+  background-color: rgb(255 255 255 / 15%);
 }
 
 .sidebarLink:focus-visible, .sidebarButton:focus-visible {
-  outline: 3px solid #dc143c;
+  outline: 3px solid #d7bc8f;
   outline-offset: 2px;
 }
 
@@ -102,7 +120,8 @@
 
 .content {
   height: 100%;
-  padding: 24px 0px;
+  min-width: 0;
+  padding: 30px 0;
 }
 
 @media (min-width: 780px) {

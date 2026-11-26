@@ -11,6 +11,7 @@ import { revalidatePath } from "next/cache";
 import { profileSchema } from "@/app/_lib/zodSchemas";
 import { hashSync } from "bcryptjs";
 import { redirect } from "next/navigation";
+import { getCountries } from "@/app/_lib/services";
 
 export const metadata = {
   title: "My Profile",
@@ -25,6 +26,11 @@ async function Profile() {
   const user = await getGuestByEmail(session.user.email);
 
   if (!user) redirect("/signin");
+  const countries = await getCountries();
+  const countryOptions = [
+    { value: "", label: "Select country..." },
+    ...(Array.isArray(countries) ? countries : []).map((country) => ({ value: `${country.name}%${country.flag}`, label: country.name })),
+  ];
 
   async function guestUpdateAction(prevState, formData) {
     "use server";
@@ -105,8 +111,10 @@ async function Profile() {
 
   return (
     <>
-      <Heading textClassName={styles.heading}>Edit Profile</Heading>
-      <ProfileForm guestUpdateAction={guestUpdateAction} guest={user} />
+      <section className={styles.page}>
+        <header className={styles.pageHeader}><p>YOUR WINFORD ACCOUNT</p><Heading textClassName={styles.heading}>Guest profile</Heading><span>Keep your contact details up to date for a smoother stay.</span></header>
+        <ProfileForm guestUpdateAction={guestUpdateAction} guest={user} countryOptions={countryOptions} />
+      </section>
     </>
   );
 }

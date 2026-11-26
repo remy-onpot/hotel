@@ -18,7 +18,7 @@ function SuccessPage({ reservation }) {
   }, [reservation.status]);
   return (
     <>
-      <Banner title={"CHECKOUT OVERVIEW"} />
+      <Banner title={"YOUR STAY IS CONFIRMED"} />
       <div className={`container ${styles["confirmation-card"]}`}>
         <h2 className={`${styles["section-title"]}`}>Reservation Details</h2>
         <div className={`${styles["confirmation-grid"]}`}>
@@ -46,7 +46,7 @@ function SuccessPage({ reservation }) {
             </div>
             <div className={`${styles["detail-group"]}`}>
               <label>Total Amount</label>
-              <span>{formatMoney(reservation.reserved_price, reservation.currency ?? "GHS")}</span>
+              <span>{formatMoney(reservation.reserved_price, "GHS")}</span>
             </div>
           </div>
           <div className={`${styles["room-preview"]}`}>
@@ -61,12 +61,10 @@ function SuccessPage({ reservation }) {
         </div>
         <div className={`${styles["action-buttons"]}`}>
           <button
-            onClick={() =>
-              toast.error("This feature hasn't been implemented yet")
-            }
+            onClick={() => window.print()}
             className={`${styles["primary-button"]}`}
           >
-            Download Confirmation
+            Print confirmation
           </button>
           <Link href={"/rooms"} className={`${styles["secondary-button"]}`}>
             Return to Home

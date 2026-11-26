@@ -1,4 +1,10 @@
-.heading {
-  font-size: 22px !important;
-}
+.page { width: 100%; max-width: 1050px; margin: 0 auto; padding: 8px 0 52px; }
+.pageHeader { margin-bottom: 28px; }
+.pageHeader > p { margin: 0; color: #9a7648; font-size: .68rem; font-weight: 700; letter-spacing: .16em; }
+.pageHeader > span { display: block; margin-top: 6px; color: #727d74; font-size: .9rem; }
+.heading { margin: 4px 0 !important; color: #193c33 !important; font: 500 clamp(2rem, 5vw, 2.8rem) Georgia, serif !important; }
+.reservationList { display: grid; gap: 15px; }
+.emptyState { padding: 38px; border: 1px dashed #d9d2c6; border-radius: 10px; background: #fffdf8; text-align: center; }
+.emptyState p { color: #47584d; font: 500 1.35rem Georgia, serif; }
+.emptyState a { display: inline-flex; gap: 8px; margin-top: 9px; color: #315b46; font-weight: 700; }
 

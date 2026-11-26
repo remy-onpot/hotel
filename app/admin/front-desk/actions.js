@@ -24,6 +24,7 @@ function accraToday() {
 async function requireAdmin() {
   const session = await auth();
   if (!isAdminSession(session)) throw new Error("Admin access required.");
+  return session;
 }
 
 export async function lookupWalkInGuest(phone) {
@@ -40,7 +41,7 @@ export async function lookupWalkInGuest(phone) {
 }
 
 export async function createWalkInReservation(_state, formData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const fullname = String(formData.get("fullname") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase() || null;
   const phone = String(formData.get("phone") ?? "").trim();
@@ -84,10 +85,10 @@ export async function createWalkInReservation(_state, formData) {
     p_room_id: room.id, p_guest_id: guest.id, p_guests_count: guests, p_start_date: start,
     p_end_date: end, p_reserved_price: total, p_currency: "GHS", p_message: "",
     p_status: "confirmed", p_booking_source: "walk_in", p_payment_method: method,
-    p_payment_reference: null,
+    p_payment_reference: null, p_recorded_by: session.user.email,
   });
   if (bookingError?.code === "23P01") return { error: "That room is already occupied for the selected dates. Choose another room or date range." };
-  if (bookingError?.code === "42703") return { error: "The reservation database is missing required Paystack columns. Apply the latest Supabase migrations, then retry." };
+  if (["42703", "PGRST202", "42883"].includes(bookingError?.code)) return { error: "The booking database is out of date. Apply the latest Supabase migrations, then retry." };
   if (bookingError) return { error: `Could not create this reservation (database error ${bookingError.code ?? "unknown"}).` };
   const stayToken = randomBytes(12).toString("base64url");
   const tokenHash = createHash("sha256").update(stayToken).digest("hex");

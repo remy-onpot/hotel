@@ -7,7 +7,7 @@
 .confirmation-card {
   border-radius: 8px;
   padding: 2rem;
-  background-color: #fff;
+  background-color: #fffdf8;
   transform: translateY(0px);
   margin-top: 20px ;
   margin-bottom: 20px ;
@@ -42,8 +42,8 @@
   font-size: 1.5rem;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #b91c1c;
-  color: #991b1b;
+  border-bottom: 2px solid #b28a55;
+  color: #173b34;
   display: inline-block;
 }
 
@@ -80,7 +80,8 @@
 .room-preview {
   border-radius: 8px;
   overflow: hidden;
-  border: 2px solid #991b1b;
+  border: 1px solid #d8c9ad;
+  border-radius: 8px;
 }
 
 .room-image {
@@ -106,25 +107,25 @@
 }
 
 .primary-button {
-  background: #b91c1c;
+  background: #173b34;
   color: white;
   border: none;
 }
 
 .primary-button:hover {
-  background: #991b1b;
+  background: #285647;
 }
 
 .secondary-button {
   background: transparent;
-  border: 1px solid #991b1b;
-  color: #991b1b;
+  border: 1px solid #315b46;
+  color: #315b46;
 }
 
 .secondary-button:hover {
-  background-color: #fef2f2;
-  border-color: #b91c1c;
-  color: #b91c1c;
+  background-color: #f1f5f0;
+  border-color: #315b46;
+  color: #315b46;
 }
 
 @media (max-width: 1024px) {
@@ -157,4 +158,10 @@
   .primary-button, .secondary-button {
     width: 100%;
   }
+}
+
+@media print {
+  .main-content { width: 100%; margin: 0; padding: 0; }
+  .confirmation-card { width: 100%; margin: 0; padding: 0; border: 0; box-shadow: none; transform: none; }
+  .action-buttons, .confirmation-card button { display: none !important; }
 }

@@ -13,12 +13,11 @@ const initialState = {
   fullname: "",
   email: "",
   phone: "",
-  nationalID: "",
   message: "",
   criticalError: "",
 };
 
-function CheckoutForm({ guest, createReservationAction, bookingCancelAction, children }) {
+function CheckoutForm({ guest, createReservationAction, bookingCancelAction }) {
   const [state, formAction] = useActionState(createReservationAction, initialState);
 
   const [isPending, setTransition] = useTransition();
@@ -36,56 +35,36 @@ function CheckoutForm({ guest, createReservationAction, bookingCancelAction, chi
 
       {state?.criticalError && <Alert>{state?.criticalError}</Alert>}
 
-      <div className={styles.formControlRow}>
-        <div className={styles.formControl}>
-          <label htmlFor="" className={styles.formLabel}>
-            Fullname
-          </label>
-          <input type="text" name="fullname" defaultValue={guest.fullname} className={styles.formInput} />
-          {state?.fullname && <span className={styles.errorMessage}>{state?.fullname}</span>}
-        </div>
-
-        <div className={styles.formControl}>
-          <label htmlFor="" className={styles.formLabel}>
-            NationalID
-          </label>
-          <input type="text" name="nationalID" defaultValue={guest.nationalID} className={styles.formInput} />
-          {state?.nationalID && <span className={styles.errorMessage}>{state?.nationalID}</span>}
-        </div>
+      <div className={styles.formControl}>
+        <label htmlFor="checkout-fullname" className={styles.formLabel}>
+          Full name
+        </label>
+        <input id="checkout-fullname" type="text" name="fullname" autoComplete="name" required defaultValue={guest.fullname} className={styles.formInput} />
+        {state?.fullname && <span className={styles.errorMessage}>{state?.fullname}</span>}
       </div>
 
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.formLabel}>
+        <label htmlFor="checkout-email" className={styles.formLabel}>
           Email Address
         </label>
-        <input type="email" name="email" defaultValue={guest.email} className={styles.formInput} />
+        <input id="checkout-email" type="email" name="email" autoComplete="email" required defaultValue={guest.email} className={styles.formInput} />
         {state?.email && <span className={styles.errorMessage}>{state?.email}</span>}
       </div>
 
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.formLabel}>
+        <label htmlFor="checkout-phone" className={styles.formLabel}>
           Phone Number
         </label>
-        <input type="tel" name="phone" defaultValue={guest.phone} className={styles.formInput} />
+        <input id="checkout-phone" type="tel" name="phone" autoComplete="tel" required defaultValue={guest.phone} className={styles.formInput} />
         {state?.phone && <span className={styles.errorMessage}>{state?.phone}</span>}
       </div>
 
       <div className={styles.formControl}>
-        <label htmlFor="" className={styles.formLabel}>
-          <span>Where are you from?</span>{" "}
-          <span className={styles.countryFlag}>
-            <img src={guest.countryFlag} alt={`${guest.nationality ?? "country"} flag`} />
-          </span>
+        <label htmlFor="checkout-message" className={styles.formLabel}>
+          Special requests <span className={styles.optionalLabel}>(optional)</span>
         </label>
-        {children}
-        {state?.nationality && <span className={styles.errorMessage}>{state?.nationality}</span>}
-      </div>
-
-      <div className={styles.formControl}>
-        <label htmlFor="" className={styles.formLabel}>
-          More Informations
-        </label>
-        <textarea name="message" id="" className={styles.formTextArea} rows={5}></textarea>
+        <textarea name="message" id="checkout-message" className={styles.formTextArea} aria-describedby="checkout-message-help" maxLength={255} rows={4} placeholder="For example, a late arrival or a room preference" />
+        <span id="checkout-message-help" className={styles.fieldHelp}>Share anything you’d like us to know before your stay. We’ll do our best to accommodate.</span>
         {state?.message && <span className={styles.errorMessage}>{state?.message}</span>}
       </div>
 

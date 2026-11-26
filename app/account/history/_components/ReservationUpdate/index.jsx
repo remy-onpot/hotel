@@ -53,9 +53,10 @@ function ReservationUpdate({ reservation }) {
               />
             </div>
             <div className="modal-update-form">
-              <label htmlFor="">Arrival</label>
+              <label htmlFor="reservation-arrival">Arrival</label>
               <DatePicker
                 selected={startDate}
+                id="reservation-arrival"
                 onChange={(date) => setStartDate(date)}
                 selectsStart
                 showDisabledMonthNavigation
@@ -67,9 +68,10 @@ function ReservationUpdate({ reservation }) {
               />
             </div>
             <div className="modal-update-form">
-              <label htmlFor="">Departure</label>
+              <label htmlFor="reservation-departure">Departure</label>
               <DatePicker
                 selected={endDate}
+                id="reservation-departure"
                 onChange={(date) => setEndDate(date)}
                 selectsEnd
                 showDisabledMonthNavigation

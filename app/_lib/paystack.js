@@ -2,7 +2,7 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { daysDifferCount } from "@/app/utils/datetime";
 import { bookingTotalPrice } from "@/app/utils/reservationsCalcs";
-import { claimRoomReservation, confirmHeldReservation } from "@/app/_lib/supabase/privilegedReservations";
+import { claimRoomReservation, confirmHeldReservation, getReservationByPaymentReference, getReservationTransaction } from "@/app/_lib/supabase/privilegedReservations";
 import { randomUUID } from "node:crypto";
 import { getRoomById } from "@/app/_lib/supabase/rooms";
 
@@ -139,6 +139,21 @@ export async function verifyAndSavePaystackReservation(reference) {
   if (!booking || booking.currency !== "GHS" || Number(booking.amount) !== Number(transaction.amount)) {
     throw new Error("The paid amount does not match this booking.");
   }
+  const storedTransaction = await getReservationTransaction(reference);
+  if (!storedTransaction || storedTransaction.provider !== "paystack" ||
+      storedTransaction.reservation_id !== Number(booking.reservation_id) ||
+      Number(storedTransaction.amount_minor) !== Number(transaction.amount) ||
+      storedTransaction.currency !== transaction.currency) {
+    throw new Error("The payment does not match the stored reservation transaction.");
+  }
+
+  const reservation = await getReservationByPaymentReference(reference);
+  if (!reservation || Number(reservation.room_id) !== Number(booking.room_id) ||
+      Number(reservation.guest_id) !== Number(booking.guest_id) ||
+      Number(reservation.guests_count) !== Number(booking.guests_count) ||
+      reservation.start_date !== booking.start_date || reservation.end_date !== booking.end_date) {
+    throw new Error("The payment metadata does not match the stored reservation.");
+  }
 
   const room = await getRoomById(booking.room_id);
   if (!room || Number(booking.guests_count) > Number(room.capacity)) {
@@ -152,6 +167,8 @@ export async function verifyAndSavePaystackReservation(reference) {
   const confirmed = await confirmHeldReservation(reference, {
     amount: Number(transaction.amount),
     currency: transaction.currency,
+    providerTransactionId: String(transaction.id),
+    paidAt: transaction.paid_at,
   });
   if (confirmed.error) throw new Error(confirmed.error.message ?? "Could not confirm the reservation.");
   return confirmed.data;

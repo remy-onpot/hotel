@@ -6,12 +6,12 @@
   justify-content: center;
   height: 80vh;
   text-align: center;
-  background-color: #f8f9fa;
-  color: #333;
+  background: #f7f5ef;
+  color: #293a33;
 }
 
 .errorCode {
-  color: #333;
+  color: #173b34;
   font-size: 4rem;
   font-weight: bold;
   margin-bottom: 20px;
@@ -30,17 +30,17 @@
 }
 
 .notFoundButton {
-  background-color: crimson;
+  background-color: #173b34;
   color: white;
   border: none;
   padding: 10px 20px;
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 7px;
   transition: background 0.3s ease-in-out;
 }
 
 .notFoundButton:hover {
-  background-color: darkred;
+  background-color: #285647;
 }

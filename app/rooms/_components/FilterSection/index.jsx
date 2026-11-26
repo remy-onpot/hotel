@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
 import "react-datepicker/dist/react-datepicker.css";
 
-import Select from "react-select";
+import CustomSelect from "@/app/_ui/CustomSelect";
 import DatePicker from "react-datepicker";
 import { useState } from "react";
 import { formatISO, formatRFC7231, isBefore, isValid } from "date-fns";
@@ -71,22 +71,21 @@ function FilterSection({ filters }) {
     <form className={`${styles.filterSection} roomsForm`}>
       <div className={styles.formControl}>
         <label id="sort-rooms-label">Sort Rooms</label>
-        <Select
+        <CustomSelect
           onChange={(e) => {
             handleSort(e);
           }}
           options={options}
           isSearchable={false}
           className={styles.select}
-          classNamePrefix="select"
-          aria-labelledby="sort-rooms-label"
+          ariaLabelledBy="sort-rooms-label"
           defaultValue={options.find((item) => item.value === filters?.filter) ?? options.at(0)}
         />
       </div>
 
       <div className={styles.formControl}>
-        <label>Filter By Date</label>
-        <div className={styles.datesContainer} role="group" aria-label="Filter rooms by stay dates">
+        <span id="filter-rooms-dates-label">Filter By Date</span>
+        <div className={styles.datesContainer} role="group" aria-labelledby="filter-rooms-dates-label">
           <DatePicker
             selected={startDate}
             onChange={(date) => handleStartSelection(date)}

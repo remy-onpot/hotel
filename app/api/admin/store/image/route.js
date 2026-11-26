@@ -25,30 +25,56 @@ export async function POST(request) {
   if (!/^\d+$/.test(productId) || !(file instanceof File) || file.size < 1 || file.size > maxSize || !types.has(file.type)) {
     return NextResponse.json({ error: "Choose one JPEG, PNG, WebP, or AVIF image up to 8 MB." }, { status: 400 });
   }
-  const { data: product, error: productError } = await privilegedQuery("room_service_products").select("id,image_path").eq("id", productId).maybeSingle();
-  if (productError || !product) return NextResponse.json({ error: "Store item not found." }, { status: 404 });
-  const bucket = getStorageBucketName();
-  if (!bucket) return NextResponse.json({ error: "Configure the hotel image storage bucket first." }, { status: 503 });
-  const storage = await privilegedStorage();
-  const { data: buckets, error: bucketError } = await storage.listBuckets();
-  if (bucketError) return NextResponse.json({ error: "Could not access image storage." }, { status: 502 });
-  const existing = buckets.find((item) => item.id === bucket);
-  if (existing && !existing.public) return NextResponse.json({ error: "The configured image bucket must be public to display menu images." }, { status: 409 });
-  if (!existing) {
-    const { error } = await storage.createBucket(bucket, { public: true, allowedMimeTypes: [...types], fileSizeLimit: maxSize });
-    if (error) return NextResponse.json({ error: "Could not prepare image storage." }, { status: 502 });
+  try {
+    const { data: product, error: productError } = await privilegedQuery("room_service_products")
+      .select("id,image_path")
+      .eq("id", productId)
+      .maybeSingle();
+    if (productError) {
+      console.error("Could not load room service image field:", productError);
+      const missingImageColumn = productError.code === "42703" || productError.message?.toLowerCase().includes("image_path");
+      return NextResponse.json({
+        error: missingImageColumn
+          ? "Room service image storage is not enabled in the database yet. Apply the room_service_product_images migration, then retry."
+          : "Could not load the room service item for its image upload.",
+      }, { status: missingImageColumn ? 503 : 502 });
+    }
+    if (!product) return NextResponse.json({ error: "Store item not found." }, { status: 404 });
+
+    const bucket = getStorageBucketName();
+    if (!bucket) return NextResponse.json({ error: "Configure the hotel image storage bucket first." }, { status: 503 });
+
+    const storage = await privilegedStorage();
+    const { data: buckets, error: bucketError } = await storage.listBuckets();
+    if (bucketError) return NextResponse.json({ error: "Could not access image storage." }, { status: 502 });
+
+    const existing = buckets.find((item) => item.id === bucket);
+    if (existing && !existing.public) return NextResponse.json({ error: "The configured image bucket must be public to display menu images." }, { status: 409 });
+    if (!existing) {
+      const { error } = await storage.createBucket(bucket, { public: true, allowedMimeTypes: [...types], fileSizeLimit: maxSize });
+      if (error) return NextResponse.json({ error: "Could not prepare image storage." }, { status: 502 });
+    }
+
+    const normalized = await normalizeUploadedImage(Buffer.from(await file.arrayBuffer()), file.type);
+    if (!normalized || normalized.length > maxSize) return NextResponse.json({ error: "That file is not a valid image." }, { status: 415 });
+
+    const path = `room-service/products/${productId}/${randomUUID()}.webp`;
+    const { error: uploadError } = await storage.from(bucket).upload(path, normalized, { contentType: "image/webp", cacheControl: "3600", upsert: false });
+    if (uploadError) return NextResponse.json({ error: "Could not upload the item image." }, { status: 502 });
+
+    const { error: updateError } = await privilegedQuery("room_service_products")
+      .update({ image_path: path, updated_at: new Date().toISOString() })
+      .eq("id", productId);
+    if (updateError) {
+      await storage.from(bucket).remove([path]);
+      return NextResponse.json({ error: "Could not attach the image to the item." }, { status: 500 });
+    }
+
+    if (product.image_path) await storage.from(bucket).remove([product.image_path]);
+    const imageUrl = storage.from(bucket).getPublicUrl(path).data.publicUrl;
+    return NextResponse.json({ image_path: path, imageUrl });
+  } catch (error) {
+    console.error("Room service image upload failed:", error);
+    return NextResponse.json({ error: "The image service could not process this upload. Check the server log for details and try again." }, { status: 500 });
   }
-  const normalized = await normalizeUploadedImage(Buffer.from(await file.arrayBuffer()), file.type);
-  if (!normalized || normalized.length > maxSize) return NextResponse.json({ error: "That file is not a valid image." }, { status: 415 });
-  const path = `room-service/products/${productId}/${randomUUID()}.webp`;
-  const { error: uploadError } = await storage.from(bucket).upload(path, normalized, { contentType: "image/webp", cacheControl: "3600", upsert: false });
-  if (uploadError) return NextResponse.json({ error: "Could not upload the item image." }, { status: 502 });
-  const { error: updateError } = await privilegedQuery("room_service_products").update({ image_path: path, updated_at: new Date().toISOString() }).eq("id", productId);
-  if (updateError) {
-    await storage.from(bucket).remove([path]);
-    return NextResponse.json({ error: "Could not attach the image to the item." }, { status: 500 });
-  }
-  if (product.image_path) await storage.from(bucket).remove([product.image_path]);
-  const imageUrl = storage.from(bucket).getPublicUrl(path).data.publicUrl;
-  return NextResponse.json({ image_path: path, imageUrl });
 }

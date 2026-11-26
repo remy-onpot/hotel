@@ -1,11 +1,12 @@
 .footer {
-  padding: 40px 0px;
-  background-color: #161616;
+  padding: 58px 0 50px;
+  border-top: 1px solid #35564a;
+  background: #17352f;
 }
 
 .footerMenu {
   display: flex;
-  gap: 32px;
+  gap: 52px;
   text-align: center;
   flex-direction: column-reverse;
 }
@@ -13,14 +14,14 @@
 @media (min-width: 720px) {
   .footerMenu {
     display: grid;
-    gap: 32px;
+    gap: 48px;
     text-align: start;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 }
 
 .footerMenu h3 {
-  color: #fff;
+  color: #e8e2d6;
   padding-bottom: 12px;
   margin-bottom: 12px;
   position: relative;
@@ -32,9 +33,9 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 164px;
-  height: 2px;
-  background-color: #dc143c;
+  width: 46px;
+  height: 1px;
+  background-color: #b28a55;
 }
 
 
@@ -43,7 +44,7 @@
     bottom: 0;
     left: 0;
     transform: translateX(0);
-    background-color: #dc143c;
+    background-color: #b28a55;
   }
 }
 
@@ -62,7 +63,7 @@
 
 
 .footerMenu ul a:hover {
-  color: #dc143c;
+  color: #d7bc8f;
 }
 
 
@@ -96,7 +97,7 @@
 }
 
 .newsletter button {
-  background-color: #dc143c;
+  background-color: #b28a55;
   color: #F1F1F1;
   transition: all 150ms linear;
   cursor: pointer;

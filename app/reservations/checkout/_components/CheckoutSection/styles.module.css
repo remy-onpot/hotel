@@ -1,31 +1,10 @@
-.formSection {
-  padding: 40px 20px;
-  background-color: #fff;
-  min-height: calc(70vh);
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 32px;
-
-  /* display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  justify-content: center; */
-}
-
-
-@media (min-width: 892px) {
-  .formSection {
-    display: grid;
-    
-    grid-template-columns: 2fr minmax(320px, 1fr);
-    justify-content: center;
-  }
-}
-
-.formInput, .formTextArea {
-  padding: 16px 12px;
-  border-radius: none;
-  outline: none;
-  border: 1px solid #dedede;
-  font-size: 17px;
-}
+.formSection { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, .8fr); align-items: start; gap: 28px; width: min(1160px, calc(100% - 40px)); margin: 38px auto 80px; padding: 0; background: transparent; }
+.formSection > :first-child { min-width: 0; padding: clamp(24px, 4vw, 42px); border: 1px solid #e8e1d5; border-radius: 12px; background: #fff; box-shadow: 0 14px 38px rgb(39 49 42 / 6%); }
+.formSection > :last-child { position: sticky; top: 22px; min-width: 0; padding: 14px; border: 1px solid #e8e1d5; border-radius: 12px; background: #fff; box-shadow: 0 14px 38px rgb(39 49 42 / 6%); }
+.formSection > :first-child h2 { color: #193c33; font: 500 1.8rem Georgia, serif; }
+.formSection > :first-child p { color: #69766f; line-height: 1.6; }
+.formInput, .formTextArea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid #d8ddd6; border-radius: 7px; outline: none; background: #fff; color: #293a33; font: inherit; font-size: .95rem; }
+.formTextArea { resize: vertical; }
+.formInput:focus-visible, .formTextArea:focus-visible { border-color: #547863; box-shadow: 0 0 0 3px rgb(84 120 99 / 14%); }
+@media (max-width: 891px) { .formSection { grid-template-columns: 1fr; width: min(720px, calc(100% - 32px)); gap: 20px; } .formSection > :last-child { position: static; grid-row: 1; } }
+@media (max-width: 520px) { .formSection { width: min(100% - 24px, 480px); margin: 22px auto 52px; } .formSection > :first-child { padding: 23px 18px; } }

@@ -3,16 +3,16 @@ import styles from "./styles.module.css";
 import Card from "@/app/_components/Card/Card";
 import Image from "next/image";
 
-import { bookingTotalPrice, nightTotalPrice } from "@/app/utils/reservationsCalcs";
+import { bookingTotalPrice, extraGuestCount, INCLUDED_GUESTS, nightTotalPrice } from "@/app/utils/reservationsCalcs";
 import { formatMoney } from "@/app/_lib/money";
 import { getRoomImageUrl } from "@/app/_lib/roomImage";
 
 function CheckoutOverview({ reservation, guests, start, end }) {
   const totalNights = daysDifferCount(end, start);
   const totalPerNight = nightTotalPrice(reservation.rooms.price, guests);
-  const guestsPrice = (guests - 1) * (reservation.rooms.price / 2);
-  const currency = reservation.currency ?? "GHS";
-  const formatPrice = (amount) => formatMoney(amount, currency);
+  const additionalGuests = extraGuestCount(guests);
+  const guestsPrice = additionalGuests * (reservation.rooms.price / 2);
+  const formatPrice = (amount) => formatMoney(amount, "GHS");
   const totalPrice = bookingTotalPrice(reservation.rooms.price, guests, totalNights);
   // return <h1>OVERVIEW CARD</h1>;
   return (
@@ -48,15 +48,13 @@ function CheckoutOverview({ reservation, guests, start, end }) {
           <div className={styles.bookingSummary}>
             <h3>Pricing Breakdown</h3>
             <p>
-              <span>{formatPrice(reservation.rooms.price)} x night (Base Rate for 1 Guest)</span>
+              <span>Room rate per night (includes up to {INCLUDED_GUESTS} guests)</span>
               <span>{formatPrice(reservation.rooms.price)}</span>
             </p>
-            <p>
-              <span>
-                Additional Guests ({guests - 1} x {formatPrice(reservation.rooms.price / 2)} per night)
-              </span>
+            {additionalGuests > 0 && <p>
+              <span>Additional guests ({additionalGuests} × {formatPrice(reservation.rooms.price / 2)} per guest, per night)</span>
               <span>{formatPrice(guestsPrice)}</span>
-            </p>
+            </p>}
             <p>
               <span>Total per Night: </span>
               <span>{formatPrice(totalPerNight)}</span>

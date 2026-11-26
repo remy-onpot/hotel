@@ -17,7 +17,7 @@ import { useActionState } from "react";
 
 const initialState = { error: "" };
 
-function ReservationOverview({ deleteAction, reservation, allowDelete = true, reservationCancelAction, children }) {
+function ReservationOverview({ deleteAction, reservation, allowDelete = true, canManageReservation = false, reservationCancelAction, children }) {
   const [showCancel, setShowCancel] = useState(false);
 
   const [state, formAction] = useActionState(reservationCancelAction, initialState);
@@ -93,28 +93,17 @@ function ReservationOverview({ deleteAction, reservation, allowDelete = true, re
             </p>
             <p>
               <span>Total Price</span>
-              <span>{formatMoney(reservation.reserved_price, reservation.currency ?? "GHS")}</span>
+              <span>{formatMoney(reservation.reserved_price, "GHS")}</span>
             </p>
           </div>
 
           <div className={styles.actionsContainer}>
-            <Link href={`/reservations/edit/${reservation.id}`} className={styles.editLink}>
-              <span>
-                <FontAwesomeIcon icon={faEdit} />
-              </span>
-              <span>Edit</span>
-            </Link>
-
-            {allowDelete ? (
-              <DeleteForm deleteAction={deleteAction} showLabel={true} />
-            ) : (
-              <button className={styles.cancelButton} onClick={() => setShowCancel(true)}>
-                <span>
-                  <FontAwesomeIcon icon={faBan} />
-                </span>{" "}
-                <span>Cancel</span>
-              </button>
-            )}
+            {canManageReservation ? <>
+              <Link href={`/reservations/edit/${reservation.id}`} className={styles.editLink}>
+                <span><FontAwesomeIcon icon={faEdit} /></span><span>Edit</span>
+              </Link>
+              {allowDelete ? <DeleteForm deleteAction={deleteAction} showLabel={true} /> : <button type="button" className={styles.cancelButton} onClick={() => setShowCancel(true)}><span><FontAwesomeIcon icon={faBan} /></span><span>Cancel</span></button>}
+            </> : <p className={styles.manageNotice}>{reservation.checked_in_at ? "This stay is checked in. Please contact the front desk for changes." : "This reservation can no longer be changed online. Please contact the front desk for help."}</p>}
           </div>
         </Card.Description>
         {children}

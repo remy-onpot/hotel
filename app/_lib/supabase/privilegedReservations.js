@@ -36,6 +36,9 @@ export const updateRoomServiceOrderStatus = (orderId, status) => callStaffRpc("u
 export const submitRoomServiceOrder = (roomUnitId, tokenHash, items, note) => callStaffRpc("submit_room_service_order", {
   p_room_unit_id: roomUnitId, p_room_order_token_hash: tokenHash, p_items: items, p_guest_note: note,
 });
+export const submitRoomServiceOrderForGuest = (reservationId, guestId, items, note) => callStaffRpc("submit_room_service_order_for_guest", {
+  p_reservation_id: reservationId, p_guest_id: guestId, p_items: items, p_guest_note: note,
+});
 
 export async function updateGuestReservation({ id, guestId, startDate, endDate, guestsCount, reservedPrice }) {
   const { data, error } = await client().rpc("update_guest_reservation", {
@@ -84,31 +87,28 @@ export async function enqueuePaymentException({ reference, reservationId, amount
 }
 
 export async function confirmHeldReservation(reference, payment = {}) {
-  const { data, error } = await client().from("reservations")
-    .update({ status: "confirmed", hold_expires_at: null })
-    .eq("payment_reference", reference).eq("status", "pending")
-    .select("id, guest_id, room_id, currency, reserved_price").maybeSingle();
-  if (error && error.code !== "23P01") return { data: null, error };
-  if (data) return { data, error: null };
-
-  const { data: reservation, error: lookupError } = await client().from("reservations")
-    .select("id, guest_id, room_id, currency, reserved_price, status")
-    .eq("payment_reference", reference).maybeSingle();
-  if (lookupError) return { data: null, error: lookupError };
-
-  // Paystack webhook and browser return can verify the same charge concurrently.
-  // Treat an already-confirmed reservation as a successful idempotent retry.
-  if (reservation?.status === "confirmed") return { data: reservation, error: null };
-
-  if (reservation?.status === "pending" || reservation?.status === "expired") {
-    await client().from("reservations").update({ status: "conflict_refund_required" })
-      .eq("payment_reference", reference).eq("status", reservation.status);
+  const { data, error } = await client().rpc("confirm_paystack_reservation", {
+    p_reference: reference, p_amount_minor: payment.amount, p_currency: payment.currency ?? "GHS",
+    p_provider_transaction_id: payment.providerTransactionId ?? null, p_paid_at: payment.paidAt ?? null,
+  });
+  if (error) return { data: null, error };
+  if (data?.ok) return { data: data.reservation, error: null };
+  if (data?.code !== "HOLD_UNAVAILABLE") {
+    return { data: null, error: { code: data?.code ?? "PAYMENT_CONFIRMATION_FAILED", message: "The payment could not be matched to its reservation." } };
   }
+
+  const reservationId = data.reservation_id;
+  const { data: reservation, error: lookupError } = await client().from("reservations")
+    .select("id, guest_id, room_id, reserved_price, status")
+    .eq("id", reservationId).maybeSingle();
+  if (lookupError) return { data: null, error: lookupError };
+  await client().from("reservations").update({ status: "conflict_refund_required" })
+    .eq("id", reservationId).in("status", ["pending", "expired"]);
   await enqueuePaymentException({
     reference,
-    reservationId: reservation?.id,
+    reservationId,
     amountMinor: payment.amount ?? (reservation ? Math.round(Number(reservation.reserved_price) * 100) : null),
-    currency: payment.currency ?? reservation?.currency ?? "GHS",
+    currency: payment.currency ?? "GHS",
     reason: "Payment verified, but the room hold expired or could not be confirmed. Review and refund if required.",
   });
   console.error("Verified payment has no confirmable room hold; refund review required.");
@@ -116,8 +116,20 @@ export async function confirmHeldReservation(reference, payment = {}) {
 }
 
 export async function getReservationByPaymentReference(reference) {
+  const { data: transaction, error: transactionError } = await client().from("reservation_transactions")
+    .select("reservation_id, currency, status").eq("provider_reference", reference).maybeSingle();
+  if (transactionError) throw new Error("Unable to load the payment transaction.");
+  if (!transaction) return null;
   const { data, error } = await client().from("reservations")
-    .select("*, rooms(thumbnail, name)").eq("payment_reference", reference).maybeSingle();
+    .select("*, rooms(thumbnail, name)").eq("id", transaction.reservation_id).maybeSingle();
   if (error) throw new Error("Unable to load the payment reservation.");
+  return data ? { ...data, currency: transaction.currency, paymentTransactionStatus: transaction.status } : null;
+}
+
+export async function getReservationTransaction(reference) {
+  const { data, error } = await client().from("reservation_transactions")
+    .select("id, reservation_id, provider, provider_reference, amount_minor, currency, status")
+    .eq("provider_reference", reference).maybeSingle();
+  if (error) throw new Error("Unable to load the payment transaction.");
   return data;
 }

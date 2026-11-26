@@ -3,7 +3,10 @@
   border: none;
   outline: none;
   color: #fff;
-  background-color: rgb(12, 12, 12);
+  border: 1px solid #c9d1ca;
+  border-radius: 7px;
+  background-color: #fff;
+  color: #56635a;
   font-size: 17px;
   margin-bottom: 20px;
   display: inline-block;
@@ -13,7 +16,7 @@
 
 
 .cancelButton:not(:disabled):hover {
-  background-color: rgb(27, 26, 27);
+  background-color: #f2f5f1;
 }
 
 .cancelButton:disabled {

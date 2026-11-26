@@ -11,6 +11,7 @@ import { formatToAbrFormat } from "@/app/utils/datetime";
 import { differenceInDays, isFuture, isPast } from "date-fns";
 import { formatMoney } from "@/app/_lib/money";
 import { getRoomImageUrl } from "@/app/_lib/roomImage";
+import { canEditReservation, getAccraToday } from "@/app/_lib/bookingRules";
 
 function ReservationCard({ reservation }) {
   async function deleteReservationAction(prevState, formData) {
@@ -44,6 +45,7 @@ function ReservationCard({ reservation }) {
   const displayStatus = reservation.status === "conflict_refund_required"
     ? "Refund review required"
     : reservation.status;
+  const canManageReservation = canEditReservation(reservation, getAccraToday());
 
   return (
     <article className={styles.reservationItem}>
@@ -71,7 +73,7 @@ function ReservationCard({ reservation }) {
           </p>
 
           <p>
-            <span className={styles.price}>{formatMoney(reservation.reserved_price, reservation.currency ?? "GHS")}</span> - {reservation.guests_count}{" "}
+            <span className={styles.price}>{formatMoney(reservation.reserved_price, "GHS")}</span> - {reservation.guests_count}{" "}
             Guest(s)
           </p>
 
@@ -97,6 +99,7 @@ function ReservationCard({ reservation }) {
             deleteAction={deleteReservationAction}
             reservation={reservation}
             reservationCancelAction={reservationCancelAction}
+            canManageReservation={canManageReservation}
           />
 
           {/* <DeleteForm deleteAction={deleteReservationAction} /> */}

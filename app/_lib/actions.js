@@ -16,7 +16,7 @@ import { revalidatePath } from "next/cache";
 import { createGuest, getGuestByEmail } from "./supabase/guests";
 import { hashSync } from "bcryptjs";
 import { createMessage } from "./supabase/inbox";
-import { canEditReservation, dateRangesOverlap, isBlockingReservation, isGuestCountWithinCapacity } from "./bookingRules";
+import { canEditReservation, dateRangesOverlap, getAccraToday, isBlockingReservation, isGuestCountWithinCapacity } from "./bookingRules";
 
 export async function authAction(prevState, formData) {
   // await new Promise((res) => setTimeout(res, 500));
@@ -113,7 +113,7 @@ export async function reservationUpdateAction(prevState, formData) {
 
   if (target_reservation.guest_id !== session.user.id)
     return { ...prevState, error: "Unauthorized to perform this action!" };
-  if (!canEditReservation(target_reservation, new Date().toISOString().slice(0, 10)))
+  if (!canEditReservation(target_reservation, getAccraToday()))
     return { ...prevState, error: "This reservation can no longer be edited." };
 
   if (!isGuestCountWithinCapacity(guests_count, target_reservation.rooms.capacity))
@@ -163,7 +163,7 @@ export async function reservationCancelAction(prevState, formData) {
   if (!session?.user?.id) return { error: "Please sign in before cancelling." };
   const reservation = await getReservationByID(reservation_id, session.user.id);
   if (!reservation || String(reservation.guest_id) !== String(session.user.id)) return { error: "Reservation not found." };
-  if (!["confirmed", "unconfirmed"].includes(reservation.status) || new Date(reservation.start_date) <= new Date()) return { error: "This reservation can no longer be cancelled online." };
+    if (!canEditReservation(reservation, getAccraToday())) return { error: "This reservation can no longer be cancelled online." };
   const { error } = await cancelReservation(session.user.id, reservation_id);
   if (error?.code === "NOT_CANCELLABLE") return { error: "This reservation can no longer be cancelled online." };
   if (error) return { error: "Could not cancel your reservation. Please try again." };

@@ -6,7 +6,7 @@ import DeleteForm from "../DeleteFrom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleXmark, faEye } from "@fortawesome/free-solid-svg-icons";
 
-function ControlButtons({ deleteAction, reservation, reservationCancelAction }) {
+function ControlButtons({ deleteAction, reservation, reservationCancelAction, canManageReservation }) {
   return (
     <div className={styles.buttonsContainer}>
       <Modal>
@@ -20,6 +20,7 @@ function ControlButtons({ deleteAction, reservation, reservationCancelAction }) 
             <ReservationOverview
               reservation={reservation}
               allowDelete={false}
+              canManageReservation={canManageReservation}
               reservationCancelAction={reservationCancelAction}
               deleteAction={deleteAction}
             >

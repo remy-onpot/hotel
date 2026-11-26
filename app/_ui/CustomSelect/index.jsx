@@ -2,6 +2,7 @@
 
 import Select from "react-select";
 import styles from "./styles.module.css";
+import { useEffect, useState } from "react";
 
 export default function CustomSelect({
   options,
@@ -18,6 +19,22 @@ export default function CustomSelect({
   required = false,
   className = "",
 }) {
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  if (!isHydrated) {
+    const selectedLabel = value?.label ?? defaultValue?.label ?? placeholder;
+    return (
+      <div className={`${styles.select} ${styles.selectPlaceholder} ${className}`} aria-hidden="true">
+        <span>{selectedLabel}</span>
+        <span className={styles.placeholderIndicator} />
+      </div>
+    );
+  }
+
   return (
     <Select
       options={options}

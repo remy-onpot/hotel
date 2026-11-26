@@ -242,7 +242,9 @@ export default function RoomImageManager({ rooms, appUrl }) {
         ? "Delete room?"
         : dialog?.type === "delete-image"
           ? "Delete room image?"
-          : "";
+          : dialog?.type === "features"
+            ? `Features · ${dialog.room.name}`
+            : "";
 
   return (
     <>
@@ -263,6 +265,9 @@ export default function RoomImageManager({ rooms, appUrl }) {
                 <p className={styles.roomId}>Room #{room.id}</p>
               </div>
               <div className={styles.roomActions}>
+                {room.features?.length > 0 && <button className={styles.featureViewButton} type="button" disabled={busy} onClick={() => openDialog({ type: "features", room })}>
+                  View features <span>{room.features.length}</span>
+                </button>}
                 <button className={styles.editButton} type="button" disabled={busy} onClick={() => openDialog({ type: "edit", room })}>
                   <FontAwesomeIcon icon={faPenToSquare} aria-hidden="true" />
                   <span>Edit details</span>
@@ -303,12 +308,6 @@ export default function RoomImageManager({ rooms, appUrl }) {
               </label>
               <span className={styles.helpText}>Choose up to 10 JPEG, PNG, WebP, or AVIF images (8 MB each).</span>
             </form>
-
-            {room.features?.length > 0 && (
-              <ul className={styles.featureTags} aria-label={`${room.name} features`}>
-                {room.features.map((feature) => <li className={styles.featureTag} key={feature}>{feature}</li>)}
-              </ul>
-            )}
 
             <div className={styles.imageGrid}>
               <figure>
@@ -393,6 +392,13 @@ export default function RoomImageManager({ rooms, appUrl }) {
                 <button type="button" className={styles.secondaryButton} disabled={busy} onClick={closeDialog}>Cancel</button>
                 <button type="button" className={styles.dangerButton} disabled={busy} onClick={handleDeleteImage}>{busy ? "Deleting…" : "Delete image"}</button>
               </div>
+            </div>
+          )}
+
+          {dialog.type === "features" && (
+            <div className={styles.featureModal}>
+              <p>Features available in this room type.</p>
+              <ul>{(dialog.room.features ?? []).map((feature) => <li key={feature}>{feature}</li>)}</ul>
             </div>
           )}
         </AdminDialog>
