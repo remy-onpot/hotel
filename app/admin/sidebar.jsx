@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/front-desk", label: "Front desk" },
   { href: "/admin/room-service", label: "Room service orders" },
   { href: "/admin/store", label: "Store items" },
+    { href: "/admin/history", label: "Stay history" },
   { href: "/admin/inbox", label: "Guest enquiries" },
   { href: "/admin/payment-exceptions", label: "Payment exceptions" },
     { href: "/admin/gallery", label: "Property gallery" },

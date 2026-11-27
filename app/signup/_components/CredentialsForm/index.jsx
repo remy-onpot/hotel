@@ -32,7 +32,7 @@ function CredentialsForm({ registerAction, authAction }) {
     <form action={formAction} className={styles.form}>
       <h2 className={styles.loginHeading}>Sign Up</h2>
 
-      {state.critical && <Alert>{state.critical}</Alert>}
+      {(state.critical || state.authErr) && <Alert>{state.critical || state.authErr}</Alert>}
 
       <div className={styles.formControl}>
         <label htmlFor="signup-fullname" className={styles.loginLabel}>

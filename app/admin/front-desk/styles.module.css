@@ -58,6 +58,19 @@
 .actionMessage { flex-basis:100%; color:#52635a; font-size:.8rem; }
 .balanceDue { color:#9a4b2e; font-weight:750; }
 .balanceClear { color:#3b704c; font-weight:650; }
+.checkoutFlag { display:inline-flex; width:fit-content; padding:.24rem .5rem; border-radius:99px; font:700 .7rem/1.25 system-ui,sans-serif; }
+.dueFlag { background:#fff4db; color:#805519; }
+.overdueFlag { background:#fde9e5; color:#a53225; }
+.overdueButton,.overdueButton:hover { background:#a53225; color:#fff; }
+.overdueButton:hover { background:#84271e; }
+.dialogBackdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:1rem; background:rgb(20 31 26 / 55%); }
+.exportDialog { position:relative; width:min(100%, 420px); padding:1.6rem; border:1px solid #e8e1d8; border-radius:12px; background:#fff; box-shadow:0 24px 70px rgb(0 0 0 / 24%); }
+.exportDialog h2 { margin:.2rem 0 .5rem; color:#24463a; font:500 1.55rem Georgia,serif; }
+.exportDialog > p:not(.sectionEyebrow) { margin:0; color:#707a73; font-size:.9rem; }
+.dialogClose { position:absolute; top:.65rem; right:.7rem; width:38px; height:38px; border:0; border-radius:50%; background:transparent; color:#58645c; font-size:1.5rem; cursor:pointer; }
+.dialogClose:hover { background:#f2f4f1; }
+.exportOptions { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin-top:1.25rem; }
+.exportOptions button { width:100%; }
 .emptyState { display:grid; gap:.25rem; padding:1.2rem; border:1px dashed #d8ded6; border-radius:8px; background:#fafbf9; color:#758078; font-size:.88rem; }
 .emptyState strong { color:#315b46; }
 .walkInPanel { border-top:3px solid #b28a56; }

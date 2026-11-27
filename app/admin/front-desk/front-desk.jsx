@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { bookingTotalPrice } from "@/app/utils/reservationsCalcs";
 import { lookupWalkInGuest, createWalkInReservation, checkoutStay, checkInExistingStay } from "./actions";
 import styles from "./styles.module.css";
@@ -14,7 +14,97 @@ function csvEscape(value) {
   return `"${safe.replace(/"/g, '""')}"`;
 }
 
-function CheckoutButton({ stay, amount }) {
+function buildTodayStayRows(stays, today, accraTime) {
+  return stays.map((stay) => {
+    const arrivalToday = stay.start_date === today;
+    const room = `${stay.rooms?.name ?? "Room type"}${stay.room_units?.room_number ? ` · Room ${stay.room_units.room_number}` : " · Room not assigned"}`;
+    const status = arrivalToday
+      ? stay.checked_out_at ? "Checked out" : stay.checked_in_at ? "Checked in" : "Awaiting check-in"
+      : stay.checked_out_at ? "Checked out" : `${accraTime.hour}:${accraTime.minute}` >= "12:00" ? "Overdue for check-out" : "Due to depart";
+    return { event: arrivalToday ? "Arrival" : "Departure", guest: stay.guests?.fullname ?? "Guest", id: stay.id, room, checkIn: stay.start_date, checkOut: stay.end_date, status };
+  });
+}
+
+function makePdf(stays, today, accraTime) {
+  const pageSize = 10;
+  const rowsByPage = [];
+  for (let index = 0; index < stays.length; index += pageSize) rowsByPage.push(stays.slice(index, index + pageSize));
+  if (!rowsByPage.length) rowsByPage.push([]);
+  const clean = (value) => String(value).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "?");
+  const escapePdf = (value) => clean(value).replace(/([\\()])/g, "\\$1");
+  const color = (hex) => hex.match(/[0-9a-f]{2}/gi).map((part) => (parseInt(part, 16) / 255).toFixed(3)).join(" ");
+  const ink = color("#173b34");
+  const gold = color("#b28a56");
+  const muted = color("#6c776f");
+  const pale = color("#f5f3ee");
+  const white = "1 1 1";
+  const text = (x, y, value, size = 9, fill = ink, font = "F1") => `BT /${font} ${size} Tf ${fill} rg ${x} ${y} Td (${escapePdf(value)}) Tj ET`;
+  const box = (x, y, width, height, fill) => `${fill} rg ${x} ${y} ${width} ${height} re f`;
+  const line = (x1, y1, x2, y2, fill) => `${fill} RG 0.7 w ${x1} ${y1} m ${x2} ${y2} l S`;
+  const truncate = (value, max) => String(value).length > max ? `${String(value).slice(0, max - 1)}...` : String(value);
+  const objects = [null, "<< /Type /Catalog /Pages 2 0 R >>", "", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>", "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold >>"];
+  const pageRefs = [];
+  rowsByPage.forEach((pageRows, pageIndex) => {
+    const pageId = 6 + pageIndex * 2;
+    const contentId = pageId + 1;
+    pageRefs.push(`${pageId} 0 R`);
+    const commands = [
+      box(0, 658, 612, 134, ink),
+      text(42, 756, "THE WINFORD", 11, white, "F2"),
+      text(42, 739, "BOUTIQUE HOTEL ACHIMOTA", 7.5, "0.820 0.866 0.831", "F2"),
+      box(42, 729, 54, 2, gold),
+      text(42, 694, "Today's stays", 26, white, "F3"),
+      text(42, 673, "ARRIVALS & DEPARTURES  /  FRONT DESK", 7.5, "0.820 0.866 0.831", "F2"),
+      text(455, 739, today, 12, white, "F2"),
+      text(455, 722, `${accraTime.hour}:${accraTime.minute} GMT`, 8, "0.820 0.866 0.831"),
+      box(0, 654, 612, 4, gold),
+      box(42, 588, 168, 48, pale), box(222, 588, 168, 48, pale), box(402, 588, 168, 48, pale),
+      text(54, 618, "ARRIVALS", 7, muted, "F2"), text(54, 596, String(stays.filter((stay) => stay.event === "Arrival").length), 17, ink, "F2"),
+      text(234, 618, "DEPARTURES", 7, muted, "F2"), text(234, 596, String(stays.filter((stay) => stay.event === "Departure").length), 17, ink, "F2"),
+      text(414, 618, "OVERDUE", 7, muted, "F2"), text(414, 596, String(stays.filter((stay) => stay.status === "Overdue for check-out").length), 17, stays.some((stay) => stay.status === "Overdue for check-out") ? "0.647 0.196 0.145" : ink, "F2"),
+      text(42, 558, "GUEST MOVEMENT", 8, ink, "F2"),
+      box(42, 520, 528, 24, ink),
+      text(52, 529, "TYPE", 7, white, "F2"), text(112, 529, "GUEST", 7, white, "F2"), text(242, 529, "ROOM", 7, white, "F2"), text(378, 529, "STAY DATES", 7, white, "F2"), text(494, 529, "STATUS", 7, white, "F2"),
+    ];
+    if (pageRows.length) {
+      pageRows.forEach((stay, rowIndex) => {
+        const y = 520 - (rowIndex + 1) * 36;
+        if (rowIndex % 2 === 0) commands.push(box(42, y, 528, 36, pale));
+        commands.push(
+          text(52, y + 20, stay.event.toUpperCase(), 7, stay.event === "Arrival" ? ink : gold, "F2"),
+          text(112, y + 20, truncate(stay.guest, 22), 8),
+          text(242, y + 20, truncate(stay.room, 21), 7.5),
+          text(378, y + 20, `${stay.checkIn}  -  ${stay.checkOut}`, 7.5),
+          text(494, y + 20, truncate(stay.status.replace(" for check-out", ""), 14), 7, stay.status === "Overdue for check-out" ? "0.647 0.196 0.145" : muted, "F2"),
+          line(42, y, 570, y, "0.890 0.882 0.851"),
+        );
+      });
+    } else {
+      box(42, 484, 528, 44, pale);
+      commands.push(text(56, 500, "No arrivals or departures scheduled for today.", 9, muted));
+    }
+    commands.push(line(42, 48, 570, 48, "0.843 0.827 0.784"));
+    commands.push(text(42, 32, "THE WINFORD  /  HOTEL ADMINISTRATION  /  ACCRA, GHANA", 7, muted, "F2"));
+    commands.push(text(524, 32, `${pageIndex + 1} / ${rowsByPage.length}`, 7, muted));
+    const content = commands.join("\n");
+    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents ${contentId} 0 R >>`;
+    objects[contentId] = `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
+  });
+  objects[2] = `<< /Type /Pages /Kids [${pageRefs.join(" ")}] /Count ${pageRefs.length} >>`;
+  let document = "%PDF-1.4\n";
+  const offsets = [0];
+  for (let id = 1; id < objects.length; id += 1) {
+    offsets[id] = document.length;
+    document += `${id} 0 obj\n${objects[id]}\nendobj\n`;
+  }
+  const xrefOffset = document.length;
+  document += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+  for (let id = 1; id < objects.length; id += 1) document += `${String(offsets[id]).padStart(10, "0")} 00000 n \n`;
+  document += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([document], { type: "application/pdf" });
+}
+
+function CheckoutButton({ stay, amount, overdue }) {
   const [state, action, busy] = useActionState(checkoutStay, {});
   return <form action={action} className={styles.stayAction}>
     <input type="hidden" name="reservation_id" value={stay.id} />
@@ -23,8 +113,8 @@ function CheckoutButton({ stay, amount }) {
         <option value="cash">Cash</option><option value="momo_transfer">MoMo transfer</option><option value="pos_card">POS card</option>
       </select>
     </label>}
-    <button className={styles.primaryButton} type="submit" disabled={busy}>
-      {busy ? "Checking out..." : `Complete check-out${amount > 0 ? ` · GHS ${amount.toFixed(2)}` : ""}`}
+    <button className={`${styles.primaryButton} ${overdue ? styles.overdueButton : ""}`} type="submit" disabled={busy}>
+      {busy ? "Checking out..." : `${overdue ? "Overdue · " : ""}Complete check-out${amount > 0 ? ` · GHS ${amount.toFixed(2)}` : ""}`}
     </button>
     {state.error && <span role="alert" className={styles.actionMessage}>{state.error}</span>}
     {state.success && <span role="status" className={styles.actionMessage}>{state.success}</span>}
@@ -50,7 +140,12 @@ function CheckInButton({ stay, unavailableUnits }) {
   </form>;
 }
 
-export default function FrontDesk({ rooms, stays, contacts, today, loadError }) {
+function accraDateTime(date) {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
+  return Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+}
+
+export default function FrontDesk({ rooms, stays, reportStays, today, initialNow, loadError }) {
   const [phone, setPhone] = useState("");
   const [lookup, setLookup] = useState(null);
   const [looking, startLookup] = useTransition();
@@ -60,6 +155,24 @@ export default function FrontDesk({ rooms, stays, contacts, today, loadError }) 
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState("");
   const [guestCount, setGuestCount] = useState("1");
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const exportCloseRef = useRef(null);
+  const [clockNow, setClockNow] = useState(() => new Date(initialNow));
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const accraTime = accraDateTime(clockNow);
+  const accraToday = `${accraTime.year}-${accraTime.month}-${accraTime.day}`;
+  useEffect(() => {
+    if (!exportDialogOpen) return;
+    exportCloseRef.current?.focus();
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setExportDialogOpen(false);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [exportDialogOpen]);
   const selectedRoom = rooms.find((room) => String(room.id) === roomId);
   const bookedArrivals = stays.filter((stay) => !stay.checked_in_at);
   const inHouseStays = stays.filter((stay) => stay.checked_in_at && !stay.checked_out_at);
@@ -83,15 +196,27 @@ export default function FrontDesk({ rooms, stays, contacts, today, loadError }) 
     startLookup(async () => setLookup(await lookupWalkInGuest(phone)));
   }
 
-  function exportCsv() {
-    const rows = [["full_name", "phone", "email", "total_stays"], ...contacts.map((row) => [row.full_name, row.phone, row.email, row.total_stays])];
+  function exportTodayStaysCsv() {
+    const staysForExport = buildTodayStayRows(reportStays, today, accraTime);
+    const rows = [["event", "guest", "reservation_id", "room", "check_in", "check_out", "stay_status"], ...staysForExport.map((stay) => [stay.event, stay.guest, stay.id, stay.room, stay.checkIn, stay.checkOut, stay.status])];
     const blob = new Blob([rows.map((row) => row.map(csvEscape).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+    downloadBlob(blob, `winford-todays-stays-${today}.csv`);
+    setExportDialogOpen(false);
+  }
+
+  function exportTodayStaysPdf() {
+    const staysForExport = buildTodayStayRows(reportStays, today, accraTime);
+    downloadBlob(makePdf(staysForExport, today, accraTime), `winford-todays-stays-${today}.pdf`);
+    setExportDialogOpen(false);
+  }
+
+  function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "winford-guest-contacts.csv";
+    link.download = filename;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return <main className={styles.page}>
@@ -99,7 +224,7 @@ export default function FrontDesk({ rooms, stays, contacts, today, loadError }) 
       <div><p className={styles.eyebrow}>Hotel administration</p><h1>Front desk</h1><p>Assign rooms to booked guests, check in walk-ins, and close out departing stays.</p></div>
       <div className={styles.headerActions}>
         <a className={styles.primaryButton} href="#walk-in">New walk-in check-in</a>
-        <button type="button" className={styles.secondaryButton} onClick={exportCsv}>Export guest contacts</button>
+        <button type="button" className={styles.secondaryButton} onClick={() => setExportDialogOpen(true)}>Export today’s stays</button>
       </div>
     </header>
     {loadError && <p role="alert" className={styles.error}>{loadError}</p>}
@@ -154,11 +279,26 @@ export default function FrontDesk({ rooms, stays, contacts, today, loadError }) 
       </div>
       {inHouseStays.length ? <ul className={styles.stays}>{inHouseStays.map((stay) => {
         const unpaid = (stay.room_service_orders ?? []).filter((order) => order.payment_status === "unpaid" && order.status === "delivered").reduce((sum, order) => sum + Number(order.total_ghs), 0);
+        const dueToday = stay.end_date === accraToday && `${accraTime.hour}:${accraTime.minute}` < "12:00";
+        const overdue = stay.end_date < accraToday || (stay.end_date === accraToday && !dueToday);
+        const checkoutStatus = overdue ? "Overdue · check-out was due by 12:00 PM" : dueToday ? "Due today · check-out by 12:00 PM" : "";
         return <li className={styles.stayCard} key={stay.id}>
-          <div className={styles.stayDetails}><strong>{stay.guests?.fullname ?? "Guest"}</strong><span>{stay.rooms?.name ?? "Room type"}{stay.room_units?.room_number ? ` · Room ${stay.room_units.room_number}` : " · Room not assigned"}</span><span>{stay.guests?.phone ?? "No phone on file"}</span><span>Check-out date {stay.end_date}</span><span className={unpaid > 0 ? styles.balanceDue : styles.balanceClear}>{unpaid > 0 ? `Room-service balance: GHS ${unpaid.toFixed(2)}` : "No room-service balance due"}</span></div>
-          <CheckoutButton stay={stay} amount={unpaid} />
+          <div className={styles.stayDetails}><strong>{stay.guests?.fullname ?? "Guest"}</strong>{checkoutStatus && <span className={`${styles.checkoutFlag} ${overdue ? styles.overdueFlag : styles.dueFlag}`}>{checkoutStatus}</span>}<span>{stay.rooms?.name ?? "Room type"}{stay.room_units?.room_number ? ` · Room ${stay.room_units.room_number}` : " · Room not assigned"}</span><span>{stay.guests?.phone ?? "No phone on file"}</span><span>Check-out date {stay.end_date}</span><span className={unpaid > 0 ? styles.balanceDue : styles.balanceClear}>{unpaid > 0 ? `Room-service balance: GHS ${unpaid.toFixed(2)}` : "No room-service balance due"}</span></div>
+          <CheckoutButton stay={stay} amount={unpaid} overdue={overdue} />
         </li>;
       })}</ul> : <div className={styles.emptyState}><strong>No checked-in guests</strong><span>Guests appear here after front desk assigns their room.</span></div>}
     </section>
+    {exportDialogOpen && <div className={styles.dialogBackdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setExportDialogOpen(false); }}>
+      <section className={styles.exportDialog} role="dialog" aria-modal="true" aria-labelledby="export-dialog-title" aria-describedby="export-dialog-description">
+        <button ref={exportCloseRef} className={styles.dialogClose} type="button" onClick={() => setExportDialogOpen(false)} aria-label="Close export options">×</button>
+        <p className={styles.sectionEyebrow}>Front desk report</p>
+        <h2 id="export-dialog-title">Choose a file format</h2>
+        <p id="export-dialog-description">Export today’s arrivals and departures.</p>
+        <div className={styles.exportOptions}>
+          <button type="button" className={styles.primaryButton} onClick={exportTodayStaysCsv}>Download CSV</button>
+          <button type="button" className={styles.secondaryButton} onClick={exportTodayStaysPdf}>Download PDF</button>
+        </div>
+      </section>
+    </div>}
   </main>;
 }

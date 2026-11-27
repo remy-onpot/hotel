@@ -29,7 +29,7 @@ function CredentialsForm({ authAction }) {
     <form action={formAction} className={styles.form}>
       <h2 className={styles.loginHeading}>Login</h2>
 
-      {state.criticalError && <Alert>{state.criticalError}</Alert>}
+      {(state.criticalError || state.message) && <Alert>{state.criticalError || state.message}</Alert>}
       {pathname === "/reservations/checkout" && (
         <Alert type="warning">Please sign in before confirming your booking!</Alert>
       )}
@@ -39,14 +39,14 @@ function CredentialsForm({ authAction }) {
           Email Address
         </label>
         <input id="signin-email" type="email" name="email" autoComplete="email" required className={styles.loginInput} />
-        {/* {state.email && <span className={styles.errorMessage}>{state.email}</span>} */}
+        {state.email && <span className={styles.errorMessage}>{state.email}</span>}
       </div>
       <div className={styles.formControl}>
         <label htmlFor="signin-password" className={styles.loginLabel}>
           Password
         </label>
         <input id="signin-password" type="password" name="password" autoComplete="current-password" required className={styles.loginInput} />
-        {/* {state.password && <span className={styles.errorMessage}>{state.password}</span>} */}
+        {state.password && <span className={styles.errorMessage}>{state.password}</span>}
       </div>
 
       <SignInButton />

@@ -19,10 +19,8 @@ import { createMessage } from "./supabase/inbox";
 import { canEditReservation, dateRangesOverlap, getAccraToday, isBlockingReservation, isGuestCountWithinCapacity } from "./bookingRules";
 
 export async function authAction(prevState, formData) {
-  // await new Promise((res) => setTimeout(res, 500));
   const email = formData.get("email");
   const password = formData.get("password");
-  prevState = {};
 
   if (!(email && password))
     return { message: "email and password are required" };
@@ -30,32 +28,40 @@ export async function authAction(prevState, formData) {
   try {
     signInSchema.parse({ email, password });
   } catch (err) {
+    const errors = {};
     err.issues.forEach((element) => {
-      prevState[element?.path[0] ?? "unknown"] = element.message;
+      errors[element?.path[0] ?? "unknown"] = element.message;
     });
 
-    return { ...prevState };
+    return errors;
   }
 
-  const credentials = { email, password };
-  let loginSuccess = true;
+  let signInUrl;
   try {
-    await signIn("credentials", { ...credentials, redirect: false });
+    signInUrl = await signIn("credentials", { email, password, redirect: false });
   } catch (err) {
-    loginSuccess = false;
-    return { ...prevState, criticalError: "Wrong email or password!" };
-  } finally {
-    if (loginSuccess) {
-      const session = await auth();
-      redirect(
-        session?.user?.role === "admin"
-          ? "/admin/rooms"
-          : (await cookies()).has("pending_reservation")
-            ? "/reservations/checkout"
-            : "/account/history"
-      );
-    }
+    console.error("Sign-in failed", err);
+    return { criticalError: "We could not sign you in. Check your email and password, then try again." };
   }
+
+  // Auth.js v5 returns an error URL for rejected credentials when redirect is
+  // disabled; it does not throw. Do not treat that as a successful login.
+  if (new URL(signInUrl, "http://localhost").searchParams.has("error")) {
+    return { criticalError: "Incorrect email or password. Please try again." };
+  }
+
+  const session = await auth();
+  if (!session?.user) {
+    return { criticalError: "We could not start your session. Please try again." };
+  }
+
+  redirect(
+    session.user.role === "admin"
+      ? "/admin/rooms"
+      : (await cookies()).has("pending_reservation")
+        ? "/reservations/checkout"
+        : "/account/history"
+  );
 }
 
 export async function bookingCancelAction() {
@@ -193,7 +199,13 @@ export async function signupAction(prevState, formData) {
     return { ...prevState };
   }
 
-  const does_email_exists = await getGuestByEmail(email);
+  let does_email_exists;
+  try {
+    does_email_exists = await getGuestByEmail(email);
+  } catch (err) {
+    console.error("Could not check signup email", err);
+    return { critical: "We could not create your account right now. Please try again." };
+  }
 
   if (does_email_exists)
     return { ...prevState, critical: "Email address already exists!" };
@@ -202,17 +214,29 @@ export async function signupAction(prevState, formData) {
     " ",
     "+"
   )}&background=161616&color=F1F1F1`;
-  const { error: createError } = await createGuest(fullname, email, avatar, hashSync(password, 10));
+  let createError;
+  try {
+    ({ error: createError } = await createGuest(fullname, email, avatar, hashSync(password, 10)));
+  } catch (err) {
+    console.error("Could not create guest account", err);
+    return { critical: "We could not create your account right now. Please try again." };
+  }
   if (createError) return { ...prevState, critical: "Could not create your account. Please check the email address or try again." };
 
+  let signInUrl;
   try {
-    await signIn("credentials", { email, password, redirect: false });
+    signInUrl = await signIn("credentials", { email, password, redirect: false });
   } catch (err) {
-    return {
-      ...prevState,
-      authErr:
-        "Error occured while attempting to authenticate you. Please try login in through the sign page!",
-    };
+    console.error("Could not sign in after signup", err);
+    return { authErr: "Your account was created, but we could not sign you in. Please use the sign-in page." };
+  }
+
+  if (new URL(signInUrl, "http://localhost").searchParams.has("error")) {
+    return { authErr: "Your account was created, but we could not sign you in. Please use the sign-in page." };
+  }
+
+  if (!(await auth())?.user) {
+    return { authErr: "Your account was created, but we could not start your session. Please use the sign-in page." };
   }
 
   redirect("/account/history");
